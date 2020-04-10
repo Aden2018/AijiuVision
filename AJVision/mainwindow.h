@@ -20,32 +20,8 @@
 
 using namespace cv;
 
-//状态宏定义
-#define START 0 // 治疗初始状态
-#define COARSE_MOVE 1 //粗定位过程
-#define PRECISE_MOVE 2 //精定位过程
-#define WAIT_FOR_TREATMENT 3 //等待治疗
-#define IN_TREATMENT 4 //治疗中
-#define TIME_OUT 5 // 时间耗尽
-#define PAUSE 6 //治疗暂停
-#define DC_MOTOR_DOWN 7 // 直流电机向下运动中
-#define DC_MOTOR_UP 8 // 直流电机向上运动中
-#define PRECISE_FINISH 9 // 精定位完成
-#define MOVE_TO_POS 10 // 精定位完成后，艾灸头移动到穴位
-#define STOP 11 // 结束治疗
-#define WAIT_FOR_RESET 12 // 等待复位完成
-#define WAIT_FOR_START 13 //等待开始完成
 
-struct ImageFrameHead {
-    unsigned int funCode;               //功能码，用于区分数据包中的内容
-    unsigned int uTransFrameHdrSize;    //sizeof(ImageFrameHead)，数据包头的大小
-    unsigned int uTransFrameSize;       //Data Size，数据包中数据的大小
-    //数据帧变量
-    unsigned int uDataFrameSize;        //图片数据总大小
-    unsigned int uDataFrameTotal;       //图片数据被分数据帧个数
-    unsigned int uDataFrameCurr;        //数据帧当前的帧号
-    unsigned int uDataInFrameOffset;    //数据帧在整帧的偏移
-};
+
 
 namespace Ui {
 class MainWindow;
@@ -82,6 +58,14 @@ public:
     unsigned char SerialCheckSum(unsigned char *buf, unsigned char len);
     //处理串口数据包
     void processSerialBuffer(const char* data);
+
+    //需要校正处理的图片
+    Mat jiaozheng(Mat image);
+
+    //根据左右相机中成像坐标求解空间坐标
+    Point3f uv2xyz(Point2f uvLeft,Point2f uvRight);
+    //将世界坐标系中的点投影到左右相机成像坐标系中
+    Point2f xyz2uv(Point3f worldPoint,float intrinsic[3][3],float translation[1][3],float rotation[3][3]);
 
 public slots:
     void handleTimeout();  //超时处理函数

@@ -20,4 +20,6 @@ using namespace cv::ml;
 //a：右边图像，b：左边图像
 Mat ImageStittch(Mat a,Mat b);
 
+void ImageStitch(int index, Mat &image1, Mat &image2, const Mat &ComFrame);
+
 #endif // IMAGESTITTCH_H

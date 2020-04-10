@@ -178,3 +178,69 @@ void OptimizeSeam(Mat& img1, Mat& trans, Mat& dst)
     }
 
 }
+
+//image1、image2分别为待拼接的左右两张图像，index为image1的编号。BIGframe为存放的拼接图像。每执行一次放置一张图像。
+//当输入index为0时，即为第一张图像时，仅仅存入当前帧，不拼接；当index不等于0时，执行拼接操作。
+//该实现功能：读取第一帧，当下一帧到来时，使用拼接、平滑计算，重新计算上一帧，并去掉上一阵左边重叠区域，得到更新的上一帧。
+//第一张与最后一张图像之间不执行拼接操作
+void ImageStitch(int index, Mat &image1, Mat &image2, const Mat &ComFrame)
+{
+    static int image_source_width = 120;
+    static int image_template_width = 100;
+    static int image_template_height = 580;
+    static int deltaY = 0;
+    static Point PreMaxLoc;
+    static const int BigCols = 6;//拼接的图像每行6张
+    static const int BigRows = 2;//拼接的图像每列2张
+    static const int FirstFrame = 0;
+    if (!index)
+    {
+        PreMaxLoc.x = 5;//偏移量x属于0-20,x取任意位置均可以。保持第一张图片宽度为800-120+5=685
+        PreMaxLoc.y = 10;//偏移量y属于0-20,当y=0时，为理想值，无偏移量(即两帧图像无上下偏移)。
+        deltaY = 0;//第一张图像上下无偏移量
+    }
+    else
+    {
+        Mat image_source = image1(Rect(800 - image_source_width, 0, image_source_width, 600));
+        Mat image_template = image2(Rect(0, 10, image_template_width, image_template_height));
+        cv::Mat image_matched;
+        //模板匹配
+        cv::matchTemplate(image_source, image_template, image_matched, cv::TM_CCORR_NORMED); //TM_SQDIFF=0, TM_SQDIFF_NORMED=1, TM_CCORR=2, TM_CCORR_NORMED=3, TM_CCOEFF=4, TM_CCOEFF_NORMED=5
+        double minVal, maxVal;
+        cv::Point minLoc, maxLoc;
+        //寻找最佳匹配位置
+        cv::minMaxLoc(image_matched, &minVal, &maxVal, &minLoc, &maxLoc);
+        Mat overlay1 = image1(Rect(800 - image_source_width + maxLoc.x, 0, image_source_width - maxLoc.x, image1.rows - 10 + maxLoc.y));  //左边区域
+        Mat overlay2 = image2(Rect(0, 10 - maxLoc.y, image_source_width - maxLoc.x, image2.rows - 10 + maxLoc.y)); //右边区域
+        Mat overlay = Mat::zeros(overlay2.rows, overlay2.cols, CV_8UC1);
+        for (int i = 0; i< overlay2.rows; i++)
+        {
+            uchar* dataoverlay1 = overlay1.ptr(i);
+            uchar* dataoverlay2 = overlay2.ptr(i);
+            uchar* dataoverlay = overlay.ptr(i);
+            for (int j = 0; j<overlay2.cols; j++)
+            {
+                double weight;
+                weight = (double)j / overlay2.cols;  //随距离改变而改变的叠加系数
+                dataoverlay[j] = (1 - weight)*dataoverlay1[j] + weight*dataoverlay2[j];
+            }
+        }
+        overlay.copyTo(image1(Rect(800 - image_source_width + maxLoc.x, 0, overlay.cols, overlay.rows)));
+        deltaY = deltaY + (10 - PreMaxLoc.y);
+        Mat newframe1 = image1(Rect(image_source_width - PreMaxLoc.x, deltaY, image1.cols - image_source_width + PreMaxLoc.x, 514));//高度给定值514，否则由于下面的resize语句，造成错位
+        cv::resize(newframe1, newframe1, Size(640, 480), 0, 0, INTER_NEAREST);
+        newframe1.copyTo(ComFrame(Rect(((index - 1) % BigCols)* newframe1.cols, ((index - 1) / BigCols)*newframe1.rows, newframe1.cols, newframe1.rows)));
+        if (index == (BigCols*BigRows + FirstFrame - 1))//最后一张图像不执行拼接操作，与上一张图像同时显示
+        {
+            Mat newframe2 = image2(Rect(image_source_width - maxLoc.x, deltaY + (10 - maxLoc.y), image2.cols - image_source_width + maxLoc.x, 514));//高度给定值514，否则由于下面的resize语句，造成错位
+            cv::resize(newframe2, newframe2, Size(640, 480), 0, 0, INTER_NEAREST);
+            newframe2.copyTo(ComFrame(Rect((index % BigCols)* newframe1.cols, ((index - 1) / BigCols)*newframe1.rows, newframe2.cols, newframe2.rows)));
+        }
+        PreMaxLoc = maxLoc;
+        if (!(index % BigCols))  //每行6列，起始index为0
+        {
+            deltaY = 0;
+        }
+    }
+    image1 = image2;  //将第二张图片赋值给第一张图片，继续进行下一循环。
+}
