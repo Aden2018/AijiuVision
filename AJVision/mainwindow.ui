@@ -34,7 +34,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>添加</string>
+     <string>拼接</string>
     </property>
    </widget>
    <widget class="QPushButton" name="deleteAll">

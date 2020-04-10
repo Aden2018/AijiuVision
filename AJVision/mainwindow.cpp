@@ -11,13 +11,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //udp初始化
     mSocket = new QUdpSocket(this);
-    connect(mSocket,SIGNAL(readyRead()),this,SLOT(read_data()));
-    qDebug()<< mSocket->bind(QHostAddress::Any, 6677);
+    connect(mSocket,SIGNAL(readyRead()),this,SLOT(read_data()),Qt::DirectConnection);
+    qDebug()<< mSocket->bind(QHostAddress::Any, 8888);
 
     //初始化定时器
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-    timer->start(100);
+  //  timer->start(100);
 
     InitialCom();//初始化串口
 
@@ -90,7 +90,6 @@ void MainWindow::InitialCom()
 
 void MainWindow::addToList(QString str)
 {
- //   QString str = ui->lineEdit->text();     //获取行编辑框文本
     QListWidgetItem *item = new QListWidgetItem;
     item->setText(str);                     //设置列表项的文本
     ui->listWidget->addItem(item);          //加载列表项到列表框
@@ -103,10 +102,10 @@ void MainWindow::read_data()
     quint16 port;
     array.resize(mSocket->bytesAvailable());//根据可读数据来设置空间大小
     mSocket->readDatagram(array.data(),array.size(),&address,&port); //读取数据
-   // ui->listWidget->addItem(array);//显示数据
+    ui->listWidget->addItem(array);//显示数据
    //发送反馈数据
 
-    QString strRecv = array;
+    QString strRecv = "hello";
     qDebug()<<strRecv<<endl;
 }
 
@@ -147,6 +146,14 @@ void MainWindow::Read_Data()//串口读取函数
 {
     QByteArray buf;
     buf = serial->readAll();
+
+    //QByteArray<->char数组
+    char recv[100];//数组
+    int len_array = buf.size();
+    int len_buf = sizeof(buf);
+    int len = qMin( len_array, len_buf );
+    // 转化
+    memcpy( recv, buf,  len );
 }
 
 //顺时针旋转90度
@@ -263,8 +270,12 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
 
 void MainWindow::on_pushButton_clicked()
 {
+    SendPictureByUdp("d:\\1.jpg",QString("127.0.0.1"), 65522);
+    return;
     Mat rigt = imread("d:\\2.jpg");//右边
+    rigt = imageRotate90(rigt);
     Mat left= imread("d:\\1.jpg");//左边
+    left = imageRotate90(left);
 
     imshow("dst",ImageStittch(rigt,left));
 }
