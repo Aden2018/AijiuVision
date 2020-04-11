@@ -17,37 +17,18 @@ MainWindow::MainWindow(QWidget *parent) :
     //初始化定时器
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-  //  timer->start(100);
+    timer->start(100);
 
     InitialCom();//初始化串口
 
-    //    Mat cameraMatrix_L = Mat(3, 3, CV_32FC1, Scalar::all(0)); // 相机的内参数
-    //    Mat cameraMatrix_R = Mat(3, 3, CV_32FC1, Scalar::all(0)); // 初始化相机的内参数
-    //    Mat distCoeffs_L = Mat(1, 5, CV_32FC1, Scalar::all(0)); // 相机的畸变系数
-    //    Mat distCoeffs_R = Mat(1, 5, CV_32FC1, Scalar::all(0)); // 初始化相机的畸变系数
-    //    Mat R, T, E, F; // 立体标定参数
+//    Mat_<float> invec = (Mat_<float>(3, 1) << 0.04345, -0.05236, -0.01810);
+//    Mat  outMat;
+//    Rodrigues(invec, outMat);
+//    cout << outMat << endl;//打印矩阵
 
-        //将mat转换成float数组
-        //左相机内参数矩阵
-        float leftIntrinsic[3][3];
-    ReadParameters();
-
-    //获取 mat 的行和列
-    int row = cameraMatrix_L.rows;
-    int col = cameraMatrix_L.cols;
-//    cout << "  mat.rows : " << cameraMatrix_L.rows << endl;
-//    cout << "  mat.cols : " << cameraMatrix_L.cols << endl;
-
-    // 循环二维数组和mat，并将mat对应值赋给二维数组对应值，
-       for (int i = 0; i < row; i ++){
-           for (int j = 0; j < col; j ++){
-               leftIntrinsic[i][j] = cameraMatrix_L.at<uchar>(i, j);
-               qDebug("%f\n",leftIntrinsic[i][j]);
-              // QDebug("%f",leftIntrinsic[i][j]);
-           }
-       }
-
-
+//    Mat outvec;
+//    Rodrigues(outMat, outvec);
+//    cout << outvec << endl;
 
 }
 
@@ -145,13 +126,13 @@ void MainWindow::handleTimeout()
 //        cvtColor(frame, frame, CV_BGR2RGB);//only RGB of Qt
 //        QImage srcQImage = QImage((uchar*)(frame.data), frame.cols, frame.rows, QImage::Format_RGB888);
 
-        Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
-        Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
-        Mat image_l = Mat(frame, rectLeft);
-        Mat image_r = Mat(frame, rectRight);
+//        Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
+//        Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
+//        Mat image_l = Mat(frame, rectLeft);
+//        Mat image_r = Mat(frame, rectRight);
 
-        imshow("left",image_l);
-        imshow("right",image_r);
+      // imshow("left",image_l);
+        imshow("right",frame);
 
 //        cvtColor(image_l, image_l, CV_BGR2RGB);//only RGB of Qt
 //        QImage srcQImage = QImage((uchar*)(image_l.data), image_l.cols, image_l.rows, QImage::Format_RGB888);
@@ -925,4 +906,6 @@ Point2f MainWindow::xyz2uv(Point3f worldPoint,float intrinsic[3][3],float transl
 
     return uv;
 }
+
+
 
