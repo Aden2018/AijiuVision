@@ -20,9 +20,6 @@
 
 using namespace cv;
 
-
-
-
 namespace Ui {
 class MainWindow;
 }
@@ -38,12 +35,14 @@ public:
     Mat imageRotate90(Mat src);//选择90度
     Mat imageRatateNegative90(Mat src);//选择-90度
 
+    //将二维坐标转换成三维坐标
+    Vec3f xy2XYZ(const char* imageName_L,const char* imageName_R,int x,int y);
     //计算视差图
     bool computeDisparityImage(const char* imageName1, const char* imageName2, Mat& img1_rectified,
         Mat& img2_rectified, Mat& mapl1, Mat& mapl2, Mat& mapr1, Mat& mapr2, Rect validRoi[2], Mat& disparity);
 
     //立体校正
-    Rect stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& cameraMatrix2, Mat& distCoeffs2,
+    void stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& cameraMatrix2, Mat& distCoeffs2,
         Size& imageSize, Mat& R, Mat& T, Mat& R1, Mat& R2, Mat& P1, Mat& P2, Mat& Q, Mat& mapl1, Mat& mapl2, Mat& mapr1, Mat& mapr2);
 
     //读取相机标定参数，包括内参、外参
@@ -61,11 +60,6 @@ public:
 
     //需要校正处理的图片
     Mat jiaozheng(Mat image);
-
-    //根据左右相机中成像坐标求解空间坐标
-    Point3f uv2xyz(Point2f uvLeft,Point2f uvRight);
-    //将世界坐标系中的点投影到左右相机成像坐标系中
-    Point2f xyz2uv(Point3f worldPoint,float intrinsic[3][3],float translation[1][3],float rotation[3][3]);
 
 public slots:
     void handleTimeout();  //超时处理函数

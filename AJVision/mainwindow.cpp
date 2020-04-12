@@ -24,6 +24,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -40,9 +41,25 @@ MainWindow::MainWindow(QWidget *parent) :
     //初始化定时器
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-    timer->start(100);
+  //  timer->start(100);
 
     InitialCom();//初始化串口
+
+    ReadParameters();
+
+    //创建图像重投影映射表
+    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
+        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
+    cout<<cameraMatrix_L<<endl;
+    cout<<distCoeffs_L<<endl;
+    cout<<cameraMatrix_R<<endl;
+    cout<<distCoeffs_R<<endl;
+    cout<<R<<endl;
+    cout<<T<<endl;
+
+
+    xy2XYZ("123","456",3,4);
+
 
 //    Mat_<float> invec = (Mat_<float>(3, 1) << 0.04345, -0.05236, -0.01810);
 //    Mat  outMat;
@@ -91,6 +108,21 @@ MainWindow::~MainWindow()
 
 
     delete ui;
+}
+
+Vec3f  MainWindow::xy2XYZ(const char* imageName_L,const char* imageName_R,int x,int y)
+{
+    //视差图建立
+    computeDisparityImage(imageName_L, imageName_R, img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
+    // 从三维投影获得深度映射
+    reprojectImageTo3D(disparity, result3DImage, Q);
+
+    Point point;
+    point.x = x;
+    point.y = y;
+    Vec3f xyz = result3DImage.at<Vec3f>(point);
+
+    return xyz;
 }
 
 void MainWindow::InitialCom()
@@ -227,7 +259,6 @@ void MainWindow::ReadParameters()
 /*
 立体校正
 参数：
-    stereoRectifyParams	存放立体校正结果的txt
     cameraMatrix			相机内参数
     distCoeffs				相机畸变系数
     imageSize				图像尺寸
@@ -238,7 +269,7 @@ void MainWindow::ReadParameters()
     Q						重投影矩阵
     map1, map2				重投影映射表
 */
-Rect MainWindow::stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& cameraMatrix2, Mat& distCoeffs2,
+void MainWindow::stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& cameraMatrix2, Mat& distCoeffs2,
     Size& imageSize, Mat& R, Mat& T, Mat& R1, Mat& R2, Mat& P1, Mat& P2, Mat& Q, Mat& mapl1, Mat& mapl2, Mat& mapr1, Mat& mapr2)
 {
     Rect validRoi[2];
@@ -248,7 +279,7 @@ Rect MainWindow::stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& 
 
     initUndistortRectifyMap(cameraMatrix1, distCoeffs1, R1, P1, imageSize, CV_32FC1, mapl1, mapl2);
     initUndistortRectifyMap(cameraMatrix2, distCoeffs2, R2, P2, imageSize, CV_32FC1, mapr1, mapr2);
-    return validRoi[0], validRoi[1];
+  //  return validRoi[0], validRoi[1];
 }
 
 /*
@@ -341,7 +372,7 @@ void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)
 
         int size = file.size();
         int num = 0;
-        int count = 0;
+        unsigned int count = 0;
         int endSize = size%996;//996=1024-sizeof(ImageFrameHead)
         if (endSize == 0) {
             num = size/996;
@@ -772,163 +803,6 @@ Mat MainWindow::jiaozheng( Mat image )
     return t;
 }
 
-/***************************************
- * //已知空间坐标求成像坐标
-    Point3f point(700,220,530);
-    cout<<"左相机中坐标："<<endl;
-    cout<<xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation)<<endl;
-    cout<<"右相机中坐标："<<endl;
-    cout<<xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation)<<endl;
-
-    //已知左右相机成像坐标求空间坐标
-    Point2f l = xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation);
-    Point2f r = xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation);
-    Point3f worldPoint;
-    worldPoint = uv2xyz(l,r);
-    cout<<"空间坐标为:"<<endl<<uv2xyz(l,r)<<endl;
- * ************************************/
-
-//************************************
-// Description: 根据左右相机中成像坐标求解空间坐标
-// Method:    uv2xyz
-// FullName:  uv2xyz
-// Access:    public
-// Parameter: Point2f uvLeft
-// Parameter: Point2f uvRight
-// Returns:   cv::Point3f
-// Author:    小白
-// Date:      2017/01/10
-// History:
-//************************************
-Point3f MainWindow::uv2xyz(Point2f uvLeft,Point2f uvRight)
-{
-    //  [u1]      |X|					  [u2]      |X|
-    //Z*|v1| = Ml*|Y|					Z*|v2| = Mr*|Y|
-    //  [ 1]      |Z|					  [ 1]      |Z|
-    //			  |1|								|1|
-
-//    Mat cameraMatrix_L = Mat(3, 3, CV_32FC1, Scalar::all(0)); // 相机的内参数
-//    Mat cameraMatrix_R = Mat(3, 3, CV_32FC1, Scalar::all(0)); // 初始化相机的内参数
-//    Mat distCoeffs_L = Mat(1, 5, CV_32FC1, Scalar::all(0)); // 相机的畸变系数
-//    Mat distCoeffs_R = Mat(1, 5, CV_32FC1, Scalar::all(0)); // 初始化相机的畸变系数
-//    Mat R, T, E, F; // 立体标定参数
-
-    //将mat转换成float数组
-    //左相机内参数矩阵
-    float leftIntrinsic[3][3] = {4037.82450,			 0,		947.65449,
-                                          0,	3969.79038,		455.48718,
-                                          0,			 0,				1};
-    //左相机畸变系数
-    float leftDistortion[1][5] = {0.18962, -4.05566, -0.00510, 0.02895, 0};
-    //左相机旋转矩阵
-    float leftRotation[3][3] = {0.912333,		-0.211508,		 0.350590,
-                                0.023249,		-0.828105,		-0.560091,
-                                0.408789,		 0.519140,		-0.750590};
-    //左相机平移向量
-    float leftTranslation[1][3] = {-127.199992, 28.190639, 1471.356768};
-
-    //右相机内参数矩阵
-    float rightIntrinsic[3][3] = {3765.83307,			 0,		339.31958,
-                                            0,	3808.08469,		660.05543,
-                                            0,			 0,				1};
-    //右相机畸变系数
-    float rightDistortion[1][5] = {-0.24195, 5.97763, -0.02057, -0.01429, 0};
-    //右相机旋转矩阵
-    float rightRotation[3][3] = {-0.134947,		 0.989568,		-0.050442,
-                                  0.752355,		 0.069205,		-0.655113,
-                                 -0.644788,		-0.126356,		-0.753845};
-    //右相机平移向量
-    float rightTranslation[1][3] = {50.877397, -99.796492, 1507.312197};
-
-
-    Mat mLeftRotation = Mat(3,3,CV_32F,leftRotation);//左相机旋转矩阵
-    Mat mLeftTranslation = Mat(3,1,CV_32F,leftTranslation);//左相机平移向量
-    Mat mLeftRT = Mat(3,4,CV_32F);//左相机M矩阵
-    hconcat(mLeftRotation,mLeftTranslation,mLeftRT);
-    Mat mLeftIntrinsic = Mat(3,3,CV_32F,leftIntrinsic);//右相机内参数矩阵
-    Mat mLeftM = mLeftIntrinsic * mLeftRT;
-    //cout<<"左相机M矩阵 = "<<endl<<mLeftM<<endl;
-
-    Mat mRightRotation = Mat(3,3,CV_32F,rightRotation);
-    Mat mRightTranslation = Mat(3,1,CV_32F,rightTranslation);
-    Mat mRightRT = Mat(3,4,CV_32F);//右相机M矩阵
-    hconcat(mRightRotation,mRightTranslation,mRightRT);
-    Mat mRightIntrinsic = Mat(3,3,CV_32F,rightIntrinsic);
-    Mat mRightM = mRightIntrinsic * mRightRT;
-
-    //cout<<"右相机M矩阵 = "<<endl<<mRightM<<endl;
-
-    //最小二乘法A矩阵
-    Mat A = Mat(4,3,CV_32F);
-    A.at<float>(0,0) = uvLeft.x * mLeftM.at<float>(2,0) - mLeftM.at<float>(0,0);
-    A.at<float>(0,1) = uvLeft.x * mLeftM.at<float>(2,1) - mLeftM.at<float>(0,1);
-    A.at<float>(0,2) = uvLeft.x * mLeftM.at<float>(2,2) - mLeftM.at<float>(0,2);
-
-    A.at<float>(1,0) = uvLeft.y * mLeftM.at<float>(2,0) - mLeftM.at<float>(1,0);
-    A.at<float>(1,1) = uvLeft.y * mLeftM.at<float>(2,1) - mLeftM.at<float>(1,1);
-    A.at<float>(1,2) = uvLeft.y * mLeftM.at<float>(2,2) - mLeftM.at<float>(1,2);
-
-    A.at<float>(2,0) = uvRight.x * mRightM.at<float>(2,0) - mRightM.at<float>(0,0);
-    A.at<float>(2,1) = uvRight.x * mRightM.at<float>(2,1) - mRightM.at<float>(0,1);
-    A.at<float>(2,2) = uvRight.x * mRightM.at<float>(2,2) - mRightM.at<float>(0,2);
-
-    A.at<float>(3,0) = uvRight.y * mRightM.at<float>(2,0) - mRightM.at<float>(1,0);
-    A.at<float>(3,1) = uvRight.y * mRightM.at<float>(2,1) - mRightM.at<float>(1,1);
-    A.at<float>(3,2) = uvRight.y * mRightM.at<float>(2,2) - mRightM.at<float>(1,2);
-
-    //最小二乘法B矩阵
-    Mat B = Mat(4,1,CV_32F);
-    B.at<float>(0,0) = mLeftM.at<float>(0,3) - uvLeft.x * mLeftM.at<float>(2,3);
-    B.at<float>(1,0) = mLeftM.at<float>(1,3) - uvLeft.y * mLeftM.at<float>(2,3);
-    B.at<float>(2,0) = mRightM.at<float>(0,3) - uvRight.x * mRightM.at<float>(2,3);
-    B.at<float>(3,0) = mRightM.at<float>(1,3) - uvRight.y * mRightM.at<float>(2,3);
-
-    Mat XYZ = Mat(3,1,CV_32F);
-    //采用SVD最小二乘法求解XYZ
-    solve(A,B,XYZ,DECOMP_SVD);
-
-    //cout<<"空间坐标为 = "<<endl<<XYZ<<endl;
-
-    //世界坐标系中坐标
-    Point3f world;
-    world.x = XYZ.at<float>(0,0);
-    world.y = XYZ.at<float>(1,0);
-    world.z = XYZ.at<float>(2,0);
-
-    return world;
-}
-
-//************************************
-// Description: 将世界坐标系中的点投影到左右相机成像坐标系中
-// Method:    xyz2uv
-// FullName:  xyz2uv
-// Access:    public
-// Parameter: Point3f worldPoint
-// Parameter: float intrinsic[3][3]
-// Parameter: float translation[1][3]
-// Parameter: float rotation[3][3]
-// Returns:   cv::Point2f
-// Author:    小白
-// Date:      2017/01/10
-// History:
-//************************************
-Point2f MainWindow::xyz2uv(Point3f worldPoint,float intrinsic[3][3],float translation[1][3],float rotation[3][3])
-{
-    //    [fx s x0]							[Xc]		[Xw]		[u]	  1		[Xc]
-    //K = |0 fy y0|       TEMP = [R T]		|Yc| = TEMP*|Yw|		| | = —*K *|Yc|
-    //    [ 0 0 1 ]							[Zc]		|Zw|		[v]	  Zc	[Zc]
-    //													[1 ]
-    Point3f c;
-    c.x = rotation[0][0]*worldPoint.x + rotation[0][1]*worldPoint.y + rotation[0][2]*worldPoint.z + translation[0][0]*1;
-    c.y = rotation[1][0]*worldPoint.x + rotation[1][1]*worldPoint.y + rotation[1][2]*worldPoint.z + translation[0][1]*1;
-    c.z = rotation[2][0]*worldPoint.x + rotation[2][1]*worldPoint.y + rotation[2][2]*worldPoint.z + translation[0][2]*1;
-
-    Point2f uv;
-    uv.x = (intrinsic[0][0]*c.x + intrinsic[0][1]*c.y + intrinsic[0][2]*c.z)/c.z;
-    uv.y = (intrinsic[1][0]*c.x + intrinsic[1][1]*c.y + intrinsic[1][2]*c.z)/c.z;
-
-    return uv;
-}
 
 
 

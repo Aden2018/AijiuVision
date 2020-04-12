@@ -37,7 +37,7 @@ SOURCES += \
 HEADERS += \
         mainwindow.h \
     imagestittch.h \
-    visoncompute.h
+    coordinatetransform.h
 
 FORMS += \
         mainwindow.ui
