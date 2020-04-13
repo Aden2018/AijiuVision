@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -60,6 +60,23 @@ public:
 
     //需要校正处理的图片
     Mat jiaozheng(Mat image);
+
+    //计算校验值
+    unsigned char jiaoyan(unsigned char* data);
+    //电机复位
+    void SendMotorResetCmd(int id,int speed,int pos);
+    //电机运动
+    void SendMotorRunCmd(int id,int speed,int pos);
+    //温度控制
+    void SendTempretureControlCmd(int value);
+    //动作控制指令帧，画圆
+    void SendHuayuanCmd(bool bEnable,int speed,int radius);
+    //动作控制指令帧，雀琢
+    void SendQuezuoCmd(bool bEnable,int speed,int pos,int maxResrved);
+    //故障帧，不定时，有故障即发 (有)
+    void SendFaultCmd(bool bFault);
+    //实时温度级别帧，1Hz
+    void SendTempretureLevelCmd(int level);
 
 public slots:
     void handleTimeout();  //超时处理函数

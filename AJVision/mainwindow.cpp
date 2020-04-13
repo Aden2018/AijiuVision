@@ -1,4 +1,4 @@
-//                   _ooOoo_
+﻿//                   _ooOoo_
 //                  o8888888o
 //                  88" . "88
 //                  (| -_- |)
@@ -174,7 +174,6 @@ void MainWindow::handleTimeout()
         Mat image_l = Mat(frame, rectLeft);
         Mat image_r = Mat(frame, rectRight);
 
-      //  Mat src = imread("F:\\lane_line_detection\\left_img\\1.jpg");
         Mat distortion = image_l.clone();
         Mat camera_matrix = Mat(3, 3, CV_32FC1);
         Mat distortion_coefficients;
@@ -227,14 +226,31 @@ void MainWindow::Read_Data()//串口读取函数
 {
     QByteArray buf;
     buf = serial->readAll();
+    //QByteArray 转换为 char *
+    char *rxData;//不要定义成ch[n];
+    rxData = buf.data();
+    int size = buf.size();
 
-    //QByteArray<->char数组
-    char recv[100];//数组
-    int len_array = buf.size();
-    int len_buf = sizeof(buf);
-    int len = qMin( len_array, len_buf );
-    // 转化
-    memcpy( recv, buf,  len );
+    if(rxData[0] == 0x5a && rxData[size-1] == jiaoyan((unsigned char*)rxData))
+    {
+        char id = rxData[1];//应答帧ID由下行帧决定
+        char cmd = rxData[2];//应答帧命令字
+        switch (id) {
+            case 1:
+                break;
+            default:
+                break;
+        }
+    }
+
+//    int size = buf.size();//
+//    //QByteArray<->char数组
+//    char recv[100];//数组
+//    int len_array = buf.size();
+//    int len_buf = sizeof(buf);
+//    int len = qMin( len_array, len_buf );
+//    // 转化
+//    memcpy( recv, buf,  len );
 }
 
 //顺时针旋转90度
@@ -824,4 +840,141 @@ Mat MainWindow::jiaozheng( Mat image )
 void MainWindow::on_saveButton_clicked()
 {
     m_bSaveImage = true;//开始保存图像
+}
+
+//计算校验值
+unsigned char MainWindow::jiaoyan(unsigned char* data)
+{
+    int sum = 0;
+    for(int i=0;i<10;i++)
+    {
+        sum += data[i];
+    }
+
+    return sum&0xff;//取低8位
+}
+
+//电机复位指令帧
+void MainWindow::SendMotorResetCmd(int id,int speed,int pos)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[2] = 0x21;//下行数据帧：复位指令
+    txData[4] = speed&0xff;//低8位
+    txData[5] = (speed>>8)&0xff;//高8位
+    txData[6] = pos&0xff;
+    txData[7] = (pos>>8)&0xff;
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+
+}
+
+//电机运动指令帧
+void MainWindow::SendMotorRunCmd(int id,int speed,int pos)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[2] = 0x01;//下行数据帧：运动指令
+    txData[4] = speed&0xff;//低8位
+    txData[5] = (speed>>8)&0xff;//高8位
+    txData[6] = pos&0xff;
+    txData[7] = (pos>>8)&0xff;
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+}
+
+
+//温度控制指令帧
+void MainWindow::SendTempretureControlCmd(int value)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = 5; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[2] = 0x11;//下行数据帧：温度控制
+    txData[6] = value&0xff;
+    txData[7] = (value>>8)&0xff;
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+}
+//动作控制指令帧，画圆
+void MainWindow::SendHuayuanCmd(bool bEnable,int speed,int radius)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = 6; //动作控制
+    txData[2] = 0x31;//下行数据帧：画圆
+    txData[3] = bEnable?1:0;
+    txData[4] = speed&0xff;//低8位
+    txData[5] = (speed>>8)&0xff;//高8位
+    txData[6] = radius&0xff;
+    txData[7] = (radius>>8)&0xff;
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+}
+
+//动作控制指令帧，雀琢
+void MainWindow::SendQuezuoCmd(bool bEnable,int speed,int pos,int maxResrved)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = 6; //动作控制
+    txData[2] = 0x32;//下行数据帧：动作指令
+    txData[3] = bEnable?1:0;
+    txData[4] = speed&0xff;//低8位
+    txData[5] = (speed>>8)&0xff;//高8位
+    txData[6] = pos&0xff;
+    txData[7] = (pos>>8)&0xff;
+    txData[8] = maxResrved&0xff;
+    txData[9] = (maxResrved>>8)&0xff;
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+}
+
+//下行故障帧，不定时，有故障即发 (有)
+void MainWindow::SendFaultCmd(bool bFault)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = 7; //动作控制
+    txData[2] = 0x2f;//下行数据帧：画圆
+    txData[4] =bFault?0:1;//低8位
+
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
+}
+
+//实时温度级别帧，1Hz
+void MainWindow::SendTempretureLevelCmd(int level)
+{
+    unsigned char txData[20] = {0};
+
+    txData[0] = 0x5a;
+    txData[1] = 87; //动作控制
+    txData[2] = 0x40;//下行数据帧：画圆
+    txData[4] = level;//
+
+    txData[10] = jiaoyan(txData);
+
+    if(serial)
+        serial->write((const char*)txData,11);
 }
