@@ -1,27 +1,4 @@
-﻿//                   _ooOoo_
-//                  o8888888o
-//                  88" . "88
-//                  (| -_- |)
-//                  O\  =  /O
-//               ____/`---'\____
-//             .'  \\|     |//  `.
-//            /  \\|||  :  |||//  \
-//           /  _||||| -:- |||||-  \
-//           |   | \\\  -  /// |   |
-//           | \_|  ''\---/''  |   |
-//           \  .-\__  `-`  ___/-. /
-//         ___`. .'  /--.--\  `. . __
-//      ."" '<  `.___\_<|>_/___.'  >'"".
-//     | | :  `- \`.;`\ _ /`;.`/ - ` : | |
-//     \  \ `-.   \_ __\ /__ _/   .-` /  /
-//======`-.____`-.___\_____/___.-`____.-'======
-//                   `=---='
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//         佛祖保佑       永无BUG
-//  本模块已经经过开光处理，绝无可能再产生bug
-//=============================================
-
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 
@@ -233,14 +210,40 @@ void MainWindow::Read_Data()//串口读取函数
 
     if(rxData[0] == 0x5a && rxData[size-1] == jiaoyan((unsigned char*)rxData))
     {
-        char id = rxData[1];//应答帧ID由下行帧决定
+        char id  = rxData[1];//应答帧ID
         char cmd = rxData[2];//应答帧命令字
-        switch (id) {
+        if(cmd == 0xc)//应答帧
+        {
+            switch (id) {
+            case 0:
+                 addToList("横轴步进电机应答");
+                 break;
             case 1:
+                 addToList("纵轴步进电机应答");
+                 break;
+            case 2:
+                addToList("垂向步进电机应答");
+                break;
+            case 5:
+                addToList("温度控制应答");
+                break;
+            case 6:
+                addToList("动作控制应答");
+                break;
+            case 7:
+                addToList("故障帧应答");
+                break;
+            case 8:
+                addToList("手持仪应答");
                 break;
             default:
                 break;
+            }
         }
+        else if(cmd == 0xf){//完成帧
+            //完成帧解析
+        }
+
     }
 
 //    int size = buf.size();//
