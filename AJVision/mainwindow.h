@@ -70,6 +70,8 @@ private slots:
     void on_deleteAll_clicked();
     void on_deleteSingleItem_clicked();
 
+    void on_saveButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -92,6 +94,8 @@ private:
     Mat img1_rectified, img2_rectified, disparity, result3DImage; // 校正图像 视差图 深度图
     Size imageSize; // 图像尺寸
     Rect validRoi[2];
+
+    bool m_bSaveImage;
 };
 
 #endif // MAINWINDOW_H

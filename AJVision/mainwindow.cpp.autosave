@@ -173,8 +173,7 @@ void MainWindow::handleTimeout()
         Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
         Mat image_l = Mat(frame, rectLeft);
         Mat image_r = Mat(frame, rectRight);
-
-      //  Mat src = imread("F:\\lane_line_detection\\left_img\\1.jpg");
+                                                                                                                                                                                                                                                                                                                                                                                                                                              
         Mat distortion = image_l.clone();
         Mat camera_matrix = Mat(3, 3, CV_32FC1);
         Mat distortion_coefficients;
