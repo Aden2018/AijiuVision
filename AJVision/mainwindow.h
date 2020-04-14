@@ -89,6 +89,8 @@ private slots:
 
     void on_saveButton_clicked();
 
+    void on_checkBox_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
 
@@ -113,6 +115,7 @@ private:
     Rect validRoi[2];
 
     bool m_bSaveImage;
+    bool m_bShowImage;
 };
 
 

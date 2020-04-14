@@ -153,6 +153,8 @@ void MainWindow::read_data()
 
 void MainWindow::handleTimeout()
 {
+    if(!m_bShowImage)
+        return;
     if(capture.isOpened())
     {
         capture >> frame;
@@ -382,23 +384,11 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
 
 void MainWindow::on_pushButton_clicked()
 {
-    //加载源图像和模板图像
-    char imagename[20];
-    const cv::Mat ComFrame(480 , 640 * 6, CV_8UC1);
-    cv::Mat image1, image2;
-    for (int i = 0; i < 3; i++)
-    {
-        sprintf_s(imagename, "d:\\%u.bmp", i);
-        image2 = cv::imread(imagename, IMREAD_GRAYSCALE);
-        ImageStitch(i, image1, image2, ComFrame);
-        Mat display;
-        cv::resize(ComFrame, display, Size(1800, 225), 0, 0, INTER_NEAREST);
-        imshow("result", display);
-        waitKey(1000);
-    }
+    Mat dst = ImageStittch(imread("d:\\2.png"),imread("d:\\1.png"));
 
-////    SendPictureByUdp("d:\\1.jpg",QString("127.0.0.1"), 65522);
-////    return;
+    medianBlur(dst, dst, 3);//第三个参数表示孔径的线性尺寸，它的值必须是大于1的奇数
+
+    imshow("dst",dst);
 }
 
 void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)
@@ -996,4 +986,9 @@ void MainWindow::SendTempretureLevelCmd(int level)
 
     if(serial)
         serial->write((const char*)txData,11);
+}
+
+void MainWindow::on_checkBox_clicked(bool checked)
+{
+    m_bShowImage = checked;
 }
