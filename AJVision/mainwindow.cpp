@@ -1,6 +1,18 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+bool x_step_finish = false;//X轴步进电机是否完成
+bool y_step_finish = false;//Y轴步进电机是否完成
+unsigned short coarse_x = 0;//x轴电机位置
+unsigned short coarse_y = 0;//y轴电机位置
+unsigned short coarse_z = 0;//z轴电机位置
+bool bUseEnableShutdown = false;//使能停机标志
+bool bDistanceDone = false;     //距离完成标志
+bool bTimeUseup    = false;     //时间耗尽标志
+bool bToAppiontPos = false;     //到达指定位置标志
+bool bToNegativeLimit = false;  //到达负限位标志
+bool bDirectionError  = false;  //方向错误标志
+bool bToLimit = false;          //到达限位标志
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -24,13 +36,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     InitialCom();//初始化串口
 
-    ReadParameters();
-    cout<<cameraMatrix_L<<endl;
-    cout<<distCoeffs_L<<endl;
-    cout<<cameraMatrix_R<<endl;
-    cout<<distCoeffs_R<<endl;
-    cout<<R<<endl;
-    cout<<T<<endl;
+
+//    ReadParameters();
+//    cout<<cameraMatrix_L<<endl;
+//    cout<<distCoeffs_L<<endl;
+//    cout<<cameraMatrix_R<<endl;
+//    cout<<distCoeffs_R<<endl;
+//    cout<<R<<endl;
+//    cout<<T<<endl;
 
 //    //创建图像重投影映射表
 //    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
@@ -485,7 +498,8 @@ unsigned char MainWindow::SerialCheckSum(unsigned char *buf, unsigned char len)
 
 
 
-int status = 0;
+
+
 //处理串口缓冲区数据
 void MainWindow::processSerialBuffer(const char* data)
 {
@@ -495,163 +509,170 @@ void MainWindow::processSerialBuffer(const char* data)
         return;
     }
 
-//    unsigned char device_id, command;
-//    device_id = data[1];
-//    command   = data[2];
+    unsigned char device_id, command;
+    device_id = data[1];//设备id
+    command   = data[2];//命令id
 
-//    //完成帧
-//    if (command == 0x0f)//完成帧
-//    {
-//        if (device_id == 0x00)//横轴完成
-//        {
-//            cout << "X轴位移完成" << endl;
-//            coarse_x = 0;
-//            unsigned short temp;
-//            temp = (unsigned char)data[5];
-//            coarse_x |= temp;
-//            temp = (unsigned char)data[6];
-//            coarse_x |= temp << 8;
-//            //printf("%x %x\n", udata[5], udata[6]);
-//            //cout << "当前x=" << coarse_x << endl;
-//            x_step_finish = true;
-//        }
+    //完成帧
+    if (command == 0x0f)//完成帧
+    {
+        if (device_id == 0x00)//横轴完成
+        {
+            addToList("X轴位移完成");
+          //  cout << "X轴位移完成" << endl;
+            coarse_x = 0;
+            unsigned short temp;
+            temp = (unsigned char)data[5];
+            coarse_x |= temp;
+            temp = (unsigned char)data[6];
+            coarse_x |= temp << 8;
+            //printf("%x %x\n", udata[5], udata[6]);
+            QString strPos("x轴当前位置:");
+            strPos.append(QString::number(coarse_x));
+            addToList(strPos);
+            //cout << "当前x=" << coarse_x << endl;
+            x_step_finish = true;
+        }
+       else if (device_id == 0x01)
+        {
+            addToList("Y轴位移完成");
+            coarse_y = 0;
+            unsigned short temp;
+            temp = (unsigned char)data[5];
+            coarse_y |= temp;
+            temp = (unsigned char)data[6];
+            coarse_y |= temp << 8;
+            //printf("%x %x\n", udata[5], udata[6]);
+            //cout << "当前y=" << coarse_y << endl;
+            QString strPos("y轴当前位置:");
+            strPos.append(QString::number(coarse_y));
+            addToList(strPos);
 
-//        if (device_id == 0x01)
-//        {
-//            cout << "Y轴位移完成" << endl;
-//            coarse_y = 0;
-//            unsigned short temp;
-//            temp = (unsigned char)data[5];
-//            coarse_y |= temp;
-//            temp = (unsigned char)data[6];
-//            coarse_y |= temp << 8;
-//            //printf("%x %x\n", udata[5], udata[6]);
-//            //cout << "当前y=" << coarse_y << endl;
-//            y_step_finish = true;
-//        }
+            y_step_finish = true;
+        }
+        else if(device_id == 0x02)//直流电机完成帧
+        {
+            addToList("Z轴位移完成");
 
-//        if (device_id == 0x02)//直流电机完成帧
-//        {
-//            if (status == DC_MOTOR_DOWN)//直流电机向下移动完成，开始治疗
-//            {
-////                if (acu_data_pack.actions[action_index].method == 1)
-////                    sendQuezhuoCommand(true);
-////                else if (acu_data_pack.actions[action_index].method == 2)
-////                    sendDiananCommand(true);
-////                else if (acu_data_pack.actions[action_index].method == 3)
-////                    sendHuayuanCommand(true);
-////                status = WAIT_FOR_TREATMENT;
+            coarse_z = 0;
+            unsigned short temp;
+            temp = (unsigned char)data[5];
+            coarse_z |= temp;
+            temp = (unsigned char)data[6];
+            coarse_z |= temp << 8;
+            //printf("%x %x\n", udata[5], udata[6]);
+            //cout << "当前y=" << coarse_y << endl;
+            QString strPos("z轴当前位置:");
+            strPos.append(QString::number(coarse_z));
+            addToList(strPos);
+        }
 
-////                if (timeRemaining == 0)
-////                    timeRemaining = acu_data_pack.actions[action_index].time * 10;//开始计时，时间单位为0.1秒
-//            }
+        unsigned char status = (unsigned char)data[4];
+        if(status&0x1 == 1) //bit0 使能停机标志
+        {
+            addToList("不是使用使能位停机");
+            bUseEnableShutdown = true;
+        }
+        else
+        {
+            addToList("不是使用使能位停机");
+            bUseEnableShutdown = false;
+        }
 
-//            if (status == DC_MOTOR_UP)//直流电机向上移动完成
-//            {
-//                if (timeRemaining == 0)
-//                {
-//                    action_index = 0;
-//                    finished_one_acupoint = true; //将标志位设为True，进行下一个穴位的按摩
-//                    ++id;
-//                }
-//                else
-//                {
-//                    cout << "直流电机上提完成" << endl;
-//                    /*if (acu_data_pack.actions[action_index].method == 1)
-//                    sendQuezhuoCommand(false);
-//                    else if (acu_data_pack.actions[action_index].method == 2)
-//                    sendDiananCommand(false);
-//                    else if (acu_data_pack.actions[action_index].method == 3)
-//                    sendHuayuanCommand(false);*/
-//                    if (!stopFlag)
-//                        status = PAUSE;
-//                    else
-//                        status = STOP;
-//                }
-//            }
-//        }
+        if(status&0x2 == 1) //bit1 距离完成标志
+        {
+            addToList("不是使用使能位停机");
+            bDistanceDone = true;
+        }
+        else
+        {
+            addToList("不是使用使能位停机");
+            bDistanceDone = false;
+        }
 
-//        if (x_step_finish && y_step_finish)
-//        {
-//            if (status == WAIT_FOR_RESET)  //复位状态
-//            {
-//                cout << "步进电机复位完成" << endl;
-//                sendResetDuojiCommand(duoji_rst);
-//                //status = WAIT_FOR_START;
-//                //sendMoveCommand(200, 5900, 15000);
-//            }
-//            else if (status == WAIT_FOR_START)
-//            {
-//                status = START;
-//                startFlag = true;
-//            }
+        if(status&0x4 == 1)//时间耗尽标志
+        {
+            addToList("时间耗尽");
+            bTimeUseup = true;
+        }
+        else
+        {
+            addToList("时间未耗尽");
+            bTimeUseup = false;
+        }
 
-//            if (status == COARSE_MOVE)
-//                //status = PRECISE_MOVE;
+        if(status&0x8 == 1)//到达指定位置标志
+        {
+            addToList("到达指定位置");
+            bToAppiontPos = true;
+        }
+        else
+        {
+            addToList("未到达指定位置");
+            bToAppiontPos = false;
+        }
 
-//            if (status == PRECISE_FINISH)
-//            {
-//                sendMoveCommand(50, coarse_x, coarse_y - 380);
-//                status = MOVE_TO_POS;
-//            }
-//            else if (status == MOVE_TO_POS)
-//            {
-//                status = WAIT_FOR_TREATMENT;//执行第一个按摩手法
-//                cout << "开始执行第" << action_index + 1 << "个按摩手法" << endl;
-//                //开始对当前手法设定温度，等待治疗
-//                sendSetTemperature(acu_data_pack.actions[action_index].temperature * 10);
-//            }
+        if(status&0x10 == 1)//到达负限位标志
+        {
+            addToList("到达负限位");
+            bToNegativeLimit = true;
+        }
+        else
+        {
+            addToList("未到达负限位");
+            bToNegativeLimit = false;
+        }
 
-//            if (status == PRECISE_MOVE)
-//            {
-//                int x = 0, y = 0;
-//                unsigned short pres_x, pres_y;
+        if(status&0x20 == 1)//方向错误标志
+        {
+            addToList("方向无误");
+            bDirectionError = true;
+        }
+        else
+        {
+            addToList("方向错误");
+            bDirectionError = false;
+        }
 
-//                ImageProc(frame, x, y);//进行图像处理，进行穴位细定位，得到精确位置
-//                cout << "x= " << x << endl;
-//                cout << "y= " << y << endl;
-//                cout << "coarse_x=" << coarse_x << endl;
-//                cout << "coarse_y=" << coarse_y << endl;
 
-//                pres_x = x > 0 ? coarse_x + (unsigned short)abs(x) : coarse_x - (unsigned short)abs(x);
-//                pres_y = y > 0 ? coarse_y + (unsigned short)abs(y) : coarse_y - (unsigned short)abs(y);
-
-//                sendMoveCommand(100, pres_x, pres_y);
-//            }
-//            else if (status == TIME_OUT)//画圆治疗结束的完成帧，通过计时完成结束
-//            {
-//                if (action_index == acu_data_pack.action_num)
-//                {
-//                    /*action_index = 0;
-//                    finished_one_acupoint = true; //将标志位设为True，进行下一个穴位的按摩
-//                    ++id;*/
-//                    cout << "直流电机提起" << endl;
-//                    sendDcmotorCommand(2500, 900, false, true);//直流电机提起
-//                    status = DC_MOTOR_UP;
-//                }
-//                else
-//                {
-//                    //发送指令进行下一个按摩手法
-//                    cout << "开始执行第" << action_index + 1 << "个按摩手法" << endl;
-//                    //开始对当前手法设定温度,等待治疗
-//                    sendSetTemperature(acu_data_pack.actions[action_index].temperature * 10);
-//                    status = WAIT_FOR_TREATMENT;
-//                }
-//            }
-//            else if (status == IN_TREATMENT && acu_data_pack.actions[action_index].method == 3)//画圆治疗结束的完成帧，通过按键
-//            {
-//                sendDcmotorCommand(2500, 900, false, true);
-//                status = DC_MOTOR_UP;
-//            }
-//            else if (status == STOP)
-//            {
-//                //system("shutdown -s -t 10"); 治疗完成关闭计算机
-//            }
-
-//            x_step_finish = false;
-//            y_step_finish = false;
-//        }
-//    }
+        if(status&0x40 == 1)//到达限位标志
+        {
+            addToList("到达限位");
+            bToLimit = true;
+        }
+        else
+        {
+            addToList("未到限位");
+            bToLimit = false;
+        }
+    }
+    else if (command == 0x0c)//应答帧
+    {
+        if(device_id == 0x0)
+        {
+            addToList("x轴电机应答");
+        }
+        else if(device_id == 0x1)
+        {
+            addToList("y轴电机应答");
+        }
+        else if(device_id == 0x2)
+        {
+            addToList("z轴电机应答");
+        }
+        else if(device_id == 0x5)
+        {
+            addToList("温度控制应答");
+        }
+        else if(device_id == 0x6)
+        {
+            addToList("动作控制应答");
+        }
+        else if(device_id == 0x7)
+        {
+            addToList("故障帧应答");
+        }
+    }
 
 //    //应答帧
 //    else if (command == 0x0c)//应答帧
@@ -710,52 +731,47 @@ void MainWindow::processSerialBuffer(const char* data)
 //    //按键帧
 //    else if (command == 0x3f)//按键帧
 //    {
-//        if (device_id == 0x08)
-//        {
-//            unsigned char key = data[4];
-//            cout << "收到按键，键值为" << (int)key << endl;
-//            if (key == 0)//按键值为WORK,重新开启工作状态
-//            {
-//                cout << "收到WORK按键" << endl;
-//                /*if (acu_data_pack.actions[action_index].method == 1)
-//                sendQuezhuoCommand(true);
-//                else if (acu_data_pack.actions[action_index].method == 2)
-//                sendDiananCommand(true);
-//                else if (acu_data_pack.actions[action_index].method == 3)
-//                sendHuayuanCommand(true);*/
-//                if (status == PAUSE)
-//                {
-//                    sendDcmotorCommand(1500, 400, true, true);
-//                    status = DC_MOTOR_DOWN;
-//                }
-//            }
-//            else if (key == 1)//按键值为PAUSE,暂停工作
-//            {
-//                cout << "收到PAUSE按键" << endl;
-//                if (status == IN_TREATMENT)
-//                {
-//                    if (acu_data_pack.actions[action_index].method == 1)
-//                        sendQuezhuoCommand(false);
-//                    else if (acu_data_pack.actions[action_index].method == 2)
-//                        sendDiananCommand(false);
-//                    else if (acu_data_pack.actions[action_index].method == 3)
-//                        sendHuayuanCommand(false);
-//                }
-//            }
-//            else if (key == 2)//按键值为STOP，停止工作
-//            {
-//                cout << "收到STOP按键" << endl;
-//                if (acu_data_pack.actions[action_index].method == 1)
-//                    sendQuezhuoCommand(false);
-//                else if (acu_data_pack.actions[action_index].method == 2)
-//                    sendDiananCommand(false);
-//                else if (acu_data_pack.actions[action_index].method == 3)
-//                    sendHuayuanCommand(false);
-//                stopFlag = true;
-//                //sendDcmotorCommand(2500, 900, false, true);
-//                //status = DC_MOTOR_UP;
-//            }
-//        }
+////        if (device_id == 0x08)
+////        {
+////            unsigned char key = data[4];
+////            cout << "收到按键，键值为" << (int)key << endl;
+////            if (key == 0)//按键值为WORK,重新开启工作状态
+////            {
+////                cout << "收到WORK按键" << endl;
+
+////                if (status == PAUSE)
+////                {
+////                    sendDcmotorCommand(1500, 400, true, true);
+////                    status = DC_MOTOR_DOWN;
+////                }
+////            }
+////            else if (key == 1)//按键值为PAUSE,暂停工作
+////            {
+////                cout << "收到PAUSE按键" << endl;
+////                if (status == IN_TREATMENT)
+////                {
+////                    if (acu_data_pack.actions[action_index].method == 1)
+////                        sendQuezhuoCommand(false);
+////                    else if (acu_data_pack.actions[action_index].method == 2)
+////                        sendDiananCommand(false);
+////                    else if (acu_data_pack.actions[action_index].method == 3)
+////                        sendHuayuanCommand(false);
+////                }
+////            }
+////            else if (key == 2)//按键值为STOP，停止工作
+////            {
+////                cout << "收到STOP按键" << endl;
+////                if (acu_data_pack.actions[action_index].method == 1)
+////                    sendQuezhuoCommand(false);
+////                else if (acu_data_pack.actions[action_index].method == 2)
+////                    sendDiananCommand(false);
+////                else if (acu_data_pack.actions[action_index].method == 3)
+////                    sendHuayuanCommand(false);
+////                stopFlag = true;
+////                //sendDcmotorCommand(2500, 900, false, true);
+////                //status = DC_MOTOR_UP;
+////            }
+////        }
 //    }
 
 //    //温度反馈

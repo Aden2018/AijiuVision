@@ -115,4 +115,18 @@ private:
     bool m_bSaveImage;
 };
 
+
+extern bool x_step_finish;//X轴步进电机是否完成
+extern bool y_step_finish;//Y轴步进电机是否完成
+extern unsigned short coarse_x;//x轴电机位置
+extern unsigned short coarse_y;//y轴电机位置
+extern unsigned short coarse_z;//z轴电机位置
+extern bool bUseEnableShutdown;//使能停机标志
+extern bool bDistanceDone;     //距离完成标志
+extern bool bTimeUseup;     //时间耗尽标志
+extern bool bToAppiontPos;     //到达指定位置标志
+extern bool bToNegativeLimit;  //到达负限位标志
+extern bool bDirectionError;  //方向错误标志
+extern bool bToLimit;          //到达限位标志
+
 #endif // MAINWINDOW_H

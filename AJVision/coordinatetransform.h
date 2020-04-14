@@ -1,4 +1,4 @@
-#ifndef COORDINATETRANSFORM_H
+﻿#ifndef COORDINATETRANSFORM_H
 #define COORDINATETRANSFORM_H
 //双目视觉坐标转换
 #include <opencv2\opencv.hpp>
@@ -41,9 +41,7 @@ float leftIntrinsic[3][3] = {7894.302084242289, 0, 1216.117060275077,
 float leftDistortion[1][5] = {-0.1204948302747099, 8.59226892990853, -0.001685124849829532, -0.001618605090039412, -292.2458695418636};
 //opencv标定完都是在左相机上建立世界坐标系
 //左相机旋转矩阵
-float leftRotation[3][3] = {1,0,0,
-                            0,1,0,
-                            0,0,1};
+float leftRotation[3][3] = {1,0,0,0,1,0,0,0,1};
 //左相机平移向量
 float leftTranslation[3][1] = {0,0,0};
 
