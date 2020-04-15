@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>313</width>
-    <height>656</height>
+    <width>405</width>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,8 +27,8 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>500</y>
+      <x>310</x>
+      <y>10</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -40,8 +40,8 @@
    <widget class="QPushButton" name="deleteAll">
     <property name="geometry">
      <rect>
-      <x>120</x>
-      <y>500</y>
+      <x>310</x>
+      <y>110</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -50,24 +50,11 @@
      <string>清空</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="deleteSingleItem">
-    <property name="geometry">
-     <rect>
-      <x>210</x>
-      <y>500</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>删除</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>530</y>
+      <x>310</x>
+      <y>40</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -76,24 +63,11 @@
      <string>保存图像</string>
     </property>
    </widget>
-   <widget class="QLabel" name="labelFrmNo">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>540</y>
-      <width>54</width>
-      <height>12</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>TextLabel</string>
-    </property>
-   </widget>
    <widget class="QCheckBox" name="checkBox">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>530</y>
+      <x>310</x>
+      <y>80</y>
       <width>71</width>
       <height>16</height>
      </rect>
@@ -108,7 +82,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>313</width>
+     <width>405</width>
      <height>23</height>
     </rect>
    </property>

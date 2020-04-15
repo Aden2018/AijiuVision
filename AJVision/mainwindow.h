@@ -10,15 +10,20 @@
 #include <QBuffer>
 #include <QFile>
 #include <QTime>
+#include <vector>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <imgproc/imgproc.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/xfeatures2d/nonfree.hpp>
+#include <opencv2/opencv.hpp>
 #include "imagestittch.h"
 
 using namespace cv;
+using namespace std;
+
 
 namespace Ui {
 class MainWindow;
@@ -85,7 +90,7 @@ private slots:
     void on_pushButton_clicked();
     void read_data();
     void on_deleteAll_clicked();
-    void on_deleteSingleItem_clicked();
+ //   void on_deleteSingleItem_clicked();
 
     void on_saveButton_clicked();
 

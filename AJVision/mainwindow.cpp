@@ -14,6 +14,7 @@ bool bToNegativeLimit = false;  //到达负限位标志
 bool bDirectionError  = false;  //方向错误标志
 bool bToLimit = false;          //到达限位标志
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -384,11 +385,16 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
 
 void MainWindow::on_pushButton_clicked()
 {
-    Mat dst = ImageStittch(imread("d:\\2.png"),imread("d:\\1.png"));
+   // Mat dst = ImageStittchBySurf(imread("d:\\image02.jpg"),imread("d:\\image01.jpg"));
+   //  Mat dst = StitchImageByOrb(imread("d:\\image02.jpg"),imread("d:\\image01.jpg"));
+  //   Mat dst = StitchImageByOrb(imread("d:\\1.png"),imread("d:\\2.png"));
+     Mat dst = StitchImageBySift(imread("d:\\1.png"),imread("d:\\2.png"));
+//    medianBlur(dst, dst, 3);//第三个参数表示孔径的线性尺寸，它的值必须是大于1的奇数
 
-    medianBlur(dst, dst, 3);//第三个参数表示孔径的线性尺寸，它的值必须是大于1的奇数
+   // Stitch(imread("d:\\1.jpg"),imread("d:\\2.jpg"));
+  //  imshow("dst",dst);
+  //  imshow("dst",StitchImageByFast(imread("d:\\1.png"),imread("d:\\2.png")));
 
-    imshow("dst",dst);
 }
 
 void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)
@@ -467,12 +473,12 @@ void MainWindow::on_deleteAll_clicked()
      }
 }
 
-void MainWindow::on_deleteSingleItem_clicked()
-{
-    //获取列表项的指针
-    QListWidgetItem *item = ui->listWidget->takeItem(ui->listWidget->currentRow());
-    delete item;        //释放指针所指向的列表项
-}
+//void MainWindow::on_deleteSingleItem_clicked()
+//{
+//    //获取列表项的指针
+//    QListWidgetItem *item = ui->listWidget->takeItem(ui->listWidget->currentRow());
+//    delete item;        //释放指针所指向的列表项
+//}
 
 //串口数据检查求和
 unsigned char MainWindow::SerialCheckSum(unsigned char *buf, unsigned char len)
@@ -992,3 +998,5 @@ void MainWindow::on_checkBox_clicked(bool checked)
 {
     m_bShowImage = checked;
 }
+
+
