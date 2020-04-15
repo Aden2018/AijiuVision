@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>405</width>
-    <height>551</height>
+    <height>512</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>艾灸</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QListWidget" name="listWidget">
@@ -41,7 +41,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>110</y>
+      <y>150</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -54,7 +54,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>40</y>
+      <y>70</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -67,7 +67,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>80</y>
+      <y>110</y>
       <width>71</width>
       <height>16</height>
      </rect>
@@ -76,16 +76,16 @@
      <string>显示</string>
     </property>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>405</width>
-     <height>23</height>
-    </rect>
-   </property>
+   <widget class="QComboBox" name="comboBox_Algorihm">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>40</y>
+      <width>71</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -95,7 +95,6 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

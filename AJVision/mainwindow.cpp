@@ -23,6 +23,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_bSaveImage = false;
 
+    QStringList text;
+    text<<tr("SURF")<<tr("ORB")<<tr("SIFT");
+    ui->comboBox_Algorihm->addItems(text);
+
+
      ui->listWidget->setViewMode(QListView::ListMode);   //设置显示模式为列表模式
 
     //udp初始化
@@ -385,16 +390,27 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
 
 void MainWindow::on_pushButton_clicked()
 {
-   // Mat dst = ImageStittchBySurf(imread("d:\\image02.jpg"),imread("d:\\image01.jpg"));
-   //  Mat dst = StitchImageByOrb(imread("d:\\image02.jpg"),imread("d:\\image01.jpg"));
-  //   Mat dst = StitchImageByOrb(imread("d:\\1.png"),imread("d:\\2.png"));
-     Mat dst = StitchImageBySift(imread("d:\\1.png"),imread("d:\\2.png"));
-//    medianBlur(dst, dst, 3);//第三个参数表示孔径的线性尺寸，它的值必须是大于1的奇数
 
-   // Stitch(imread("d:\\1.jpg"),imread("d:\\2.jpg"));
-  //  imshow("dst",dst);
-  //  imshow("dst",StitchImageByFast(imread("d:\\1.png"),imread("d:\\2.png")));
+    try {
+         Mat dst;
+         if(ui->comboBox_Algorihm->currentIndex()==0)
+         {
+             dst = StittchBySurf(imread("d:\\1.png"),imread("d:\\2.png"));
+         }
+         else if(ui->comboBox_Algorihm->currentIndex()==1)
+         {
+             dst = StitchImageByOrb(imread("d:\\1.png"),imread("d:\\2.png"));
+         }
+         else if(ui->comboBox_Algorihm->currentIndex()==2)
+         {
+             dst = StitchImageBySift(imread("d:\\1.png"),imread("d:\\2.png"));
+         }
 
+           imshow("dst",dst);
+
+    } catch (QString exception) {
+        QMessageBox::about(this,"Error",exception);
+    }
 }
 
 void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)

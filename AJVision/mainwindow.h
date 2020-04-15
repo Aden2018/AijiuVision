@@ -10,6 +10,8 @@
 #include <QBuffer>
 #include <QFile>
 #include <QTime>
+#include <QMessageBox>
+#include <QException>
 #include <vector>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>

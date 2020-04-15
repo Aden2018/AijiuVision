@@ -20,7 +20,7 @@ using namespace cv::xfeatures2d;
 using namespace cv::ml;
 
 //a：右边图像，b：左边图像
-Mat ImageStittchBySurf(Mat a,Mat b);//a右图,b左图
+Mat StittchBySurf(Mat a,Mat b);//a右图,b左图
 Mat StitchImageByOrb(Mat a,Mat b); //a右图,b左图
 Mat StitchImageBySift(Mat a,Mat b);//a右图,b左图
 //Mat Stitch( Mat img1, Mat img2);//不好使

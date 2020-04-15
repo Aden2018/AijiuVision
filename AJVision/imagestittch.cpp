@@ -59,7 +59,7 @@ void CalcCorners(const Mat& H, const Mat& src)
 }
 
 
-Mat ImageStittchBySurf(Mat a,Mat b) //a：右边图像，b：左边图像
+Mat StittchBySurf(Mat a,Mat b) //a：右边图像，b：左边图像
 {
     Ptr<SURF> surf;            //创建方式和OpenCV2中的不一样,并且要加上命名空间xfreatures2d
                                //否则即使配置好了还是显示SURF为未声明的标识符
@@ -132,9 +132,6 @@ Mat ImageStittchBySurf(Mat a,Mat b) //a：右边图像，b：左边图像
     imageTransform1.copyTo(dst(Rect(0, 0, imageTransform1.cols, imageTransform1.rows)));
     b.copyTo(dst(Rect(0, 0, b.cols, b.rows)));
 
- //   imshow("b_dst", dst);
-
-
     OptimizeSeam(b, imageTransform1, dst);
 
     return dst;
@@ -165,7 +162,7 @@ Mat StitchImageByOrb(Mat a,Mat b) //a右图,b左图
     sort(matches.begin(), matches.end());     //筛选匹配点，根据match里面特征对的距离从小到大排序
     vector<DMatch> good_matches;
     int ptsPairs = std::min(50, (int)(matches.size() * 0.15));
-    cout << ptsPairs << endl;
+//    cout << ptsPairs << endl;
     for (int i = 0; i < ptsPairs; i++)
     {
         good_matches.push_back(matches[i]);//距离最小的50个压入新的DMatch
@@ -173,7 +170,7 @@ Mat StitchImageByOrb(Mat a,Mat b) //a右图,b左图
 
     Mat outimg;                            //drawMatches这个函数直接画出摆在一起的图
     drawMatches(b, key2, a, key1, good_matches, outimg, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);  //绘制匹配点
-    imshow("combine", outimg);
+//    imshow("combine", outimg);
 
     //计算图像配准点
     vector<Point2f> imagePoints1, imagePoints2;
@@ -188,14 +185,14 @@ Mat StitchImageByOrb(Mat a,Mat b) //a右图,b左图
     Mat homo = findHomography(imagePoints1, imagePoints2, CV_RANSAC);
     //也可以使用getPerspectiveTransform方法获得透视变换矩阵，不过要求只能有4个点，效果稍差
     //Mat   homo=getPerspectiveTransform(imagePoints1,imagePoints2);
-    cout << "变换矩阵为：\n" << homo << endl << endl; //输出映射矩阵
+  //  cout << "变换矩阵为：\n" << homo << endl << endl; //输出映射矩阵
 
                                                 //计算配准图的四个顶点坐标
     CalcCorners(homo, a);
-    cout << "left_top:" << corners.left_top << endl;
-    cout << "left_bottom:" << corners.left_bottom << endl;
-    cout << "right_top:" << corners.right_top << endl;
-    cout << "right_bottom:" << corners.right_bottom << endl;
+//    cout << "left_top:" << corners.left_top << endl;
+//    cout << "left_bottom:" << corners.left_bottom << endl;
+//    cout << "right_top:" << corners.right_top << endl;
+//    cout << "right_bottom:" << corners.right_bottom << endl;
 
     //图像配准
     Mat imageTransform1, imageTransform2;
@@ -361,7 +358,7 @@ Mat StitchImageBySift(Mat a,Mat b) //a右图,b左图
     sort(matches.begin(), matches.end());     //筛选匹配点，根据match里面特征对的距离从小到大排序
     vector<DMatch> good_matches;
     int ptsPairs = std::min(50, (int)(matches.size() * 0.15));
-    cout << ptsPairs << endl;
+ //   cout << ptsPairs << endl;
     for (int i = 0; i < ptsPairs; i++)
     {
         good_matches.push_back(matches[i]);//距离最小的50个压入新的DMatch
@@ -369,7 +366,7 @@ Mat StitchImageBySift(Mat a,Mat b) //a右图,b左图
 
     Mat outimg;                            //drawMatches这个函数直接画出摆在一起的图
     drawMatches(b, key2, a, key1, good_matches, outimg, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);  //绘制匹配点
-    imshow("combine", outimg);
+//    imshow("combine", outimg);
 
     //计算图像配准点
     vector<Point2f> imagePoints1, imagePoints2;
@@ -384,14 +381,14 @@ Mat StitchImageBySift(Mat a,Mat b) //a右图,b左图
     Mat homo = findHomography(imagePoints1, imagePoints2, CV_RANSAC);
     //也可以使用getPerspectiveTransform方法获得透视变换矩阵，不过要求只能有4个点，效果稍差
     //Mat   homo=getPerspectiveTransform(imagePoints1,imagePoints2);
-    cout << "变换矩阵为：\n" << homo << endl << endl; //输出映射矩阵
+   // cout << "变换矩阵为：\n" << homo << endl << endl; //输出映射矩阵
 
                                                 //计算配准图的四个顶点坐标
     CalcCorners(homo, a);
-    cout << "left_top:" << corners.left_top << endl;
-    cout << "left_bottom:" << corners.left_bottom << endl;
-    cout << "right_top:" << corners.right_top << endl;
-    cout << "right_bottom:" << corners.right_bottom << endl;
+//    cout << "left_top:" << corners.left_top << endl;
+//    cout << "left_bottom:" << corners.left_bottom << endl;
+//    cout << "right_top:" << corners.right_top << endl;
+//    cout << "right_bottom:" << corners.right_bottom << endl;
 
     //图像配准
     Mat imageTransform1, imageTransform2;
