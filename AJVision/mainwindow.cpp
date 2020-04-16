@@ -21,7 +21,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    this->setMouseTracking(false);//设置窗体可响应 Mouse Move
+
     m_bSaveImage = false;
+    m_bRotateImage = false;
 
     QStringList text;
     text<<tr("SURF")<<tr("ORB")<<tr("SIFT");
@@ -42,8 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     InitialCom();//初始化串口
 
-
-//    ReadParameters();
+    ReadParameters();
 //    cout<<cameraMatrix_L<<endl;
 //    cout<<distCoeffs_L<<endl;
 //    cout<<cameraMatrix_R<<endl;
@@ -71,6 +73,65 @@ MainWindow::MainWindow(QWidget *parent) :
 //    cout << outvec << endl;
 
 }
+//鼠标点击事件
+ void MainWindow::mousePressEvent(QMouseEvent *event)
+ {
+     if(event->button()==Qt::LeftButton)
+     {
+
+         if(!distortion.data)
+             return;
+         int ImageWidth = distortion.cols;
+         int ImageHeight = distortion.rows;
+
+         QPoint viewPoint = event->globalPos();  //获取全局位置
+         viewPoint = ui->label->mapFromGlobal(viewPoint);
+
+         float w = ui->label->contentsRect().width();
+         float h = ui->label->contentsRect().height();
+         int col = int(viewPoint.x() * (ImageWidth / w));  //获取当前Label的坐标，按比例缩放为图片坐标
+         int row = int(viewPoint.y() * (ImageHeight / h));
+
+         if (row > 0 && row < ImageHeight && col > 0 && col < ImageWidth) //超出图像范围不显示坐标
+         {
+             QString strPosX = QString::number(col);
+             QString strPosY = QString::number(row);
+
+             cvtColor(distortion, distortion, CV_BGR2RGB);
+             QImage img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
+                 distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
+
+             QRgb rgbPixel = img_2.pixel(col,row); //读入的图像为灰度图，任意通道像素值一样
+             int gray = qRed(rgbPixel);
+             QString strGray = QString::number(gray);
+
+             QString strShowData;// = strPosX + "," + strPosY + "," + strGray;
+             strShowData.append("x:");
+             strShowData.append(strPosX);
+
+             strShowData.append(",");
+             strShowData.append("y:");
+             strShowData.append(strPosY);
+
+             strShowData.append(",");
+             strShowData.append("灰度:");
+             strShowData.append(strPosX);
+
+             addToList(strShowData);
+         }
+     }
+     else if(event->button()==Qt::RightButton)
+     {
+         qDebug()<<"RightButton clicked!";
+
+     }
+ }
+
+ //第二步：移动鼠标获取图像坐标和灰度值（按下左键移动鼠标）
+ void MainWindow::mouseMoveEvent(QMouseEvent *event)
+ {
+
+ }
 
 MainWindow::~MainWindow()
 {
@@ -164,27 +225,42 @@ void MainWindow::handleTimeout()
     if(capture.isOpened())
     {
         capture >> frame;
-//        cvtColor(frame, frame, CV_BGR2RGB);//only RGB of Qt
-//        QImage srcQImage = QImage((uchar*)(frame.data), frame.cols, frame.rows, QImage::Format_RGB888);
+
 
         Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
         Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
         Mat image_l = Mat(frame, rectLeft);
         Mat image_r = Mat(frame, rectRight);
 
-        Mat distortion = image_l.clone();
+        if(m_bRotateImage)
+            image_l = imageRatateNegative90(image_l);
+
+        distortion = image_l.clone();
         Mat camera_matrix = Mat(3, 3, CV_32FC1);
         Mat distortion_coefficients;
 
+         QImage img_2;
         //矫正
-        cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
+        if(camera_matrix.data&&distCoeffs_L.data)
+        {
+            cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
+            cvtColor(distortion, distortion, CV_BGR2RGB);
+            img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
+            distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
+        }
+        else {
+            cvtColor(distortion, distortion, CV_BGR2RGB);
+            img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
+            distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
+        }
 
 
-        imshow("left",image_l);
 
-
-       imshow("left2",distortion);
-       //imshow("right",image_r);
+//       int a2 = ui->label->width();
+//       int b2 = ui->label->height();
+//       QImage imgg = img_2.scaled(a2, b2);
+       ui->label->setPixmap(QPixmap::fromImage(img_2));
+       ui->label->show();
 
 
 
@@ -204,12 +280,7 @@ void MainWindow::handleTimeout()
 
        }
 
-//        cvtColor(image_l, image_l, CV_BGR2RGB);//only RGB of Qt
-//        QImage srcQImage = QImage((uchar*)(image_l.data), image_l.cols, image_l.rows, QImage::Format_RGB888);
 
-//        ui->label->setPixmap(QPixmap::fromImage(srcQImage));
-//        ui->label->resize(srcQImage.size());
-//        ui->label->show();
     }
     else
     {
@@ -218,7 +289,42 @@ void MainWindow::handleTimeout()
         capture.set(CV_CAP_PROP_FRAME_HEIGHT, 960);
     }
 
+
+//            if(!capture.isOpened())
+//                 capture.open(0);
+//            Mat frame,srcmat2,gray,dst_x,dst_y,dst;
+//            capture>>frame;
+//         //   imshow("origin", frame);
+//            cvtColor(frame, srcmat2, CV_BGR2RGB);
+//            cvtColor(frame, gray, CV_BGR2GRAY);
+//            //sobel 边缘检测
+//            Sobel(gray, dst_x, gray.depth(), 1, 0);
+//            Sobel(gray, dst_y, gray.depth(), 0, 1);
+//            convertScaleAbs(dst_x, dst_x);
+//            convertScaleAbs(dst_y, dst_y);
+//            addWeighted(dst_x, 0.5, dst_y, 0.5, 0, dst);
+//        //    imshow("dst", dst);
+//            //原始图像的显示
+//            QImage img = QImage((const unsigned char*)srcmat2.data, // uchar* data
+//                srcmat2.cols, srcmat2.rows, srcmat2.step, QImage::Format_RGB888);//格式转换
+//            int a = ui->label->width();
+//            int b = ui->label->height();
+//            QImage ime = img.scaled(a, b);//自定义缩放
+//            ui->label->setPixmap(QPixmap::fromImage(ime));
+//            ui->label->show();
+//            //处理后图像的显示
+//            QImage img_2 = QImage((const unsigned char*)dst.data, // uchar* data
+//                dst.cols, dst.rows, dst.step, QImage::Format_Grayscale8);
+
+//            int a2 = ui->label->width();
+//            int b2 = ui->label->height();
+//            QImage imgg = img_2.scaled(a2, b2);
+//            ui->label->setPixmap(QPixmap::fromImage(imgg));
+//            ui->label->show();
+
+
 }
+
 
 void MainWindow::Read_Data()//串口读取函数
 {
@@ -229,52 +335,8 @@ void MainWindow::Read_Data()//串口读取函数
     rxData = buf.data();
     int size = buf.size();
 
-    if(rxData[0] == 0x5a && rxData[size-1] == jiaoyan((unsigned char*)rxData))
-    {
-        char id  = rxData[1];//应答帧ID
-        char cmd = rxData[2];//应答帧命令字
-        if(cmd == 0xc)//应答帧
-        {
-            switch (id) {
-            case 0:
-                 addToList("横轴步进电机应答");
-                 break;
-            case 1:
-                 addToList("纵轴步进电机应答");
-                 break;
-            case 2:
-                addToList("垂向步进电机应答");
-                break;
-            case 5:
-                addToList("温度控制应答");
-                break;
-            case 6:
-                addToList("动作控制应答");
-                break;
-            case 7:
-                addToList("故障帧应答");
-                break;
-            case 8:
-                addToList("手持仪应答");
-                break;
-            default:
-                break;
-            }
-        }
-        else if(cmd == 0xf){//完成帧
-            //完成帧解析
-        }
+    processSerialBuffer(rxData);
 
-    }
-
-//    int size = buf.size();//
-//    //QByteArray<->char数组
-//    char recv[100];//数组
-//    int len_array = buf.size();
-//    int len_buf = sizeof(buf);
-//    int len = qMin( len_array, len_buf );
-//    // 转化
-//    memcpy( recv, buf,  len );
 }
 
 //顺时针旋转90度
@@ -390,6 +452,19 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
 
 void MainWindow::on_pushButton_clicked()
 {
+    Mat dst = imread("d:\\1.png");
+    dst = imageRotate90(dst);
+    qDebug()<<QString::number(dst.cols);
+    qDebug()<<QString::number(dst.rows);
+    QImage img_2 = QImage((const unsigned char*)dst.data, // uchar* data
+    dst.cols, dst.rows, dst.step, QImage::Format_RGB888);
+
+   // int a2 = ui->label->width();
+  //  int b2 = ui->label->height();
+  //  QImage imgg = img_2.scaled(a2, b2);
+    ui->label->setPixmap(QPixmap::fromImage(img_2));
+    ui->label->show();
+    return;
 
     try {
          Mat dst;
@@ -1016,3 +1091,8 @@ void MainWindow::on_checkBox_clicked(bool checked)
 }
 
 
+
+void MainWindow::on_checkBox_2_clicked(bool checked)
+{
+    m_bRotateImage = checked;
+}

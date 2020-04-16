@@ -12,6 +12,7 @@
 #include <QTime>
 #include <QMessageBox>
 #include <QException>
+#include <QMouseEvent>
 #include <vector>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
@@ -34,7 +35,9 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+protected:
+     void mousePressEvent(QMouseEvent *event);//鼠标点击事件
+     void mouseMoveEvent(QMouseEvent *event); //鼠标移动事件
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -85,6 +88,9 @@ public:
     //实时温度级别帧，1Hz
     void SendTempretureLevelCmd(int level);
 
+    //Mat转QImage
+    QImage mat2QImage(Mat srcImg);
+
 public slots:
     void handleTimeout();  //超时处理函数
     void Read_Data();      //串口读写类
@@ -97,6 +103,8 @@ private slots:
     void on_saveButton_clicked();
 
     void on_checkBox_clicked(bool checked);
+
+    void on_checkBox_2_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
@@ -123,6 +131,9 @@ private:
 
     bool m_bSaveImage;
     bool m_bShowImage;
+    bool m_bRotateImage;
+
+     Mat distortion;
 };
 
 
