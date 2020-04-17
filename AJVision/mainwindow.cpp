@@ -244,25 +244,11 @@ void MainWindow::handleTimeout()
         if(camera_matrix.data&&distCoeffs_L.data)
         {
             cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
-            cvtColor(distortion, distortion, CV_BGR2RGB);
-            img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
-            distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
+            ShowImage(distortion);
         }
         else {
-            cvtColor(distortion, distortion, CV_BGR2RGB);
-            img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
-            distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
+            ShowImage(image_l);
         }
-
-
-
-//       int a2 = ui->label->width();
-//       int b2 = ui->label->height();
-//       QImage imgg = img_2.scaled(a2, b2);
-       ui->label->setPixmap(QPixmap::fromImage(img_2));
-       ui->label->show();
-
-
 
        if(m_bSaveImage)
        {
@@ -271,22 +257,19 @@ void MainWindow::handleTimeout()
 
            m_bSaveImage = false;
 
+           cvtColor(distortion, distortion, CV_RGB2BGR);
            string path1 = std::to_string(cnt) + ".jpg";
-           imwrite(path1, image_l);
+           imwrite(path1, distortion);
 
            string path2 = std::to_string(cnt+25) + ".jpg";
            imwrite(path2, image_r);
-
-
        }
-
-
     }
     else
     {
         capture.open(0);
-        capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-        capture.set(CV_CAP_PROP_FRAME_HEIGHT, 960);
+        capture.set(CV_CAP_PROP_FRAME_WIDTH,  640);//
+        capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     }
 
 
@@ -325,6 +308,20 @@ void MainWindow::handleTimeout()
 
 }
 
+void MainWindow::ShowImage(Mat srcImage)
+{
+    QImage img;
+    cvtColor(srcImage, srcImage, CV_BGR2RGB);
+    img = QImage((const unsigned char*)srcImage.data, // uchar* data
+        srcImage.cols, srcImage.rows, srcImage.step, QImage::Format_RGB888);
+
+
+//   int a2 = ui->label->width();
+//   int b2 = ui->label->height();
+//   QImage imgg = img.scaled(a2, b2);
+    ui->label->setPixmap(QPixmap::fromImage(img));
+    ui->label->show();
+}
 
 void MainWindow::Read_Data()//串口读取函数
 {
@@ -449,39 +446,54 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
     normalize(disparity, disparity, 0, 256, NORM_MINMAX, -1);
     return true;
 }
+//两幅图片横向拼接
+/*
+  参数：
+    left	左边图像
+    right	右边图像
+    roi	右边图像拼接区域
+  返回：
+   mat 拼接之后的图像
+*/
+Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,Rect roi)
+{
+    Mat dst;
+    right = Mat(right,roi);
 
+    hconcat(left,right,dst);
+    //         vconcat（B,C，A）; // 等同于A=[B  C] 横向拼接
+    //         hconcat（B,C，A）; // 等同于A=[B  C] 纵向拼接
+    return dst;
+}
 void MainWindow::on_pushButton_clicked()
 {
-    Mat dst = imread("d:\\1.png");
-    dst = imageRotate90(dst);
-    qDebug()<<QString::number(dst.cols);
-    qDebug()<<QString::number(dst.rows);
-    QImage img_2 = QImage((const unsigned char*)dst.data, // uchar* data
-    dst.cols, dst.rows, dst.step, QImage::Format_RGB888);
-
-   // int a2 = ui->label->width();
-  //  int b2 = ui->label->height();
-  //  QImage imgg = img_2.scaled(a2, b2);
-    ui->label->setPixmap(QPixmap::fromImage(img_2));
-    ui->label->show();
-    return;
-
     try {
          Mat dst;
-         if(ui->comboBox_Algorihm->currentIndex()==0)
-         {
-             dst = StittchBySurf(imread("d:\\1.png"),imread("d:\\2.png"));
-         }
-         else if(ui->comboBox_Algorihm->currentIndex()==1)
-         {
-             dst = StitchImageByOrb(imread("d:\\1.png"),imread("d:\\2.png"));
-         }
-         else if(ui->comboBox_Algorihm->currentIndex()==2)
-         {
-             dst = StitchImageBySift(imread("d:\\1.png"),imread("d:\\2.png"));
-         }
+         Mat right = imread("d:\\2.jpg");
+         Mat left  = imread("d:\\1.jpg");
 
-           imshow("dst",dst);
+         Rect rectLeft(0, 0, left.cols / 2, left.rows);
+         Rect rectRight(right.cols / 2, 0, right.cols / 2, right.rows);
+         Mat image_l = Mat(left, rectLeft);
+         Mat image_r = Mat(right, rectRight);
+
+         ShowImage(ImageStitchByHconcat(left,right,rectRight));
+
+//         return;
+//         if(ui->comboBox_Algorihm->currentIndex()==0)
+//         {
+//             dst = StittchBySurf(right,left);
+//         }
+//         else if(ui->comboBox_Algorihm->currentIndex()==1)
+//         {
+//             dst = StitchImageByOrb(right,left);
+//         }
+//         else if(ui->comboBox_Algorihm->currentIndex()==2)
+//         {
+//             dst = StitchImageBySift(right,left);
+//         }
+
+        //   imshow("dst",dst);
 
     } catch (QString exception) {
         QMessageBox::about(this,"Error",exception);
@@ -564,12 +576,6 @@ void MainWindow::on_deleteAll_clicked()
      }
 }
 
-//void MainWindow::on_deleteSingleItem_clicked()
-//{
-//    //获取列表项的指针
-//    QListWidgetItem *item = ui->listWidget->takeItem(ui->listWidget->currentRow());
-//    delete item;        //释放指针所指向的列表项
-//}
 
 //串口数据检查求和
 unsigned char MainWindow::SerialCheckSum(unsigned char *buf, unsigned char len)
@@ -582,9 +588,6 @@ unsigned char MainWindow::SerialCheckSum(unsigned char *buf, unsigned char len)
     }
     return ret;
 }
-
-
-
 
 
 //处理串口缓冲区数据
@@ -761,168 +764,6 @@ void MainWindow::processSerialBuffer(const char* data)
         }
     }
 
-//    //应答帧
-//    else if (command == 0x0c)//应答帧
-//    {
-//        //cout<<"收到设备"<<device_id<<"的应答帧"<<endl;
-//        if (device_id == 0x04)//舵机复位完成
-//        {
-//            cout << "舵机复位完成" << endl;
-//            status = WAIT_FOR_START;
-//            sendMoveCommand(200, 5900, 15000);//走到床头
-//        }
-
-//        if (device_id == 0x06)//动作控制帧：以当前位置为圆心画圆
-//        {
-//            if (status == WAIT_FOR_TREATMENT)
-//                status = IN_TREATMENT;//进入治疗中状态，开始计时
-//            else if (status == IN_TREATMENT)//按键暂停的应答帧
-//            {
-//                cout << "method=" << acu_data_pack.actions[action_index].method << endl;
-//                if (acu_data_pack.actions[action_index].method != 3)//若当前手法不是画圆，则收到应答帧即可认为电机停止
-//                {
-//                    sendDcmotorCommand(2500, 900, false, true);
-//                    status = DC_MOTOR_UP;
-//                    //status = PAUSE;
-//                }
-//            }
-//            else if (status == PAUSE)
-//            {
-//                status = IN_TREATMENT;
-//            }
-//            else if (status == TIME_OUT)
-//            {
-//                if (acu_data_pack.actions[action_index - 1].method != 3)//若当前手法不是画圆，则收到应答帧即可认为电机停止
-//                {
-//                    if (action_index == acu_data_pack.action_num)
-//                    {
-//                        cout << "直流电机提起" << endl;
-//                        sendDcmotorCommand(2500, 900, false, true);//直流电机提起
-//                        status = DC_MOTOR_UP;
-//                    }
-//                    else
-//                    {
-//                        //发送指令进行下一个按摩手法
-//                        cout << "开始执行第" << action_index + 1 << "个按摩手法" << endl;
-//                        //开始对当前手法设定温度，等待治疗
-//                        sendSetTemperature(acu_data_pack.actions[action_index].temperature * 10);
-//                        status = WAIT_FOR_TREATMENT;
-//                    }
-//                }
-//            }
-
-//            cout << "治疗手法应答后,status=" << status << endl;
-//        }
-//    }
-
-//    //按键帧
-//    else if (command == 0x3f)//按键帧
-//    {
-////        if (device_id == 0x08)
-////        {
-////            unsigned char key = data[4];
-////            cout << "收到按键，键值为" << (int)key << endl;
-////            if (key == 0)//按键值为WORK,重新开启工作状态
-////            {
-////                cout << "收到WORK按键" << endl;
-
-////                if (status == PAUSE)
-////                {
-////                    sendDcmotorCommand(1500, 400, true, true);
-////                    status = DC_MOTOR_DOWN;
-////                }
-////            }
-////            else if (key == 1)//按键值为PAUSE,暂停工作
-////            {
-////                cout << "收到PAUSE按键" << endl;
-////                if (status == IN_TREATMENT)
-////                {
-////                    if (acu_data_pack.actions[action_index].method == 1)
-////                        sendQuezhuoCommand(false);
-////                    else if (acu_data_pack.actions[action_index].method == 2)
-////                        sendDiananCommand(false);
-////                    else if (acu_data_pack.actions[action_index].method == 3)
-////                        sendHuayuanCommand(false);
-////                }
-////            }
-////            else if (key == 2)//按键值为STOP，停止工作
-////            {
-////                cout << "收到STOP按键" << endl;
-////                if (acu_data_pack.actions[action_index].method == 1)
-////                    sendQuezhuoCommand(false);
-////                else if (acu_data_pack.actions[action_index].method == 2)
-////                    sendDiananCommand(false);
-////                else if (acu_data_pack.actions[action_index].method == 3)
-////                    sendHuayuanCommand(false);
-////                stopFlag = true;
-////                //sendDcmotorCommand(2500, 900, false, true);
-////                //status = DC_MOTOR_UP;
-////            }
-////        }
-//    }
-
-//    //温度反馈
-//    else if (command == 0x1f)//温度反馈
-//    {
-//        unsigned short temp;
-//        unsigned char level;
-//        temprature = 0;
-//        temp = (unsigned char)data[3];
-//        temprature |= temp;
-//        temp = (unsigned char)data[4];
-//        temprature |= temp << 8;
-//        cout << "当前温度值为" << (float)temprature / 10 << endl;
-//        level = temp2Level(temprature / 10);
-//        sendTempLevel(level);
-
-//        if (status == WAIT_FOR_TREATMENT)
-//        {
-//            cout << "检查温度是否符合要求" << endl;
-//            if (abs(temprature / 10 - acu_data_pack.actions[action_index].temperature) < 10)//如果当前温度与设定温度差值小于一定值
-//            {
-//                /*if (acu_data_pack.actions[action_index].method == 1)
-//                sendQuezhuoCommand(true);
-//                else if (acu_data_pack.actions[action_index].method == 2)
-//                sendDiananCommand(true);
-//                else if (acu_data_pack.actions[action_index].method == 3)
-//                sendHuayuanCommand(true);
-//                //status = IN_TREATMENT;
-
-//                timeRemaining = acu_data_pack.actions[action_index].time * 10;//开始计时，时间单位为0.1秒*/
-//                cout << "温度满足要求" << endl;
-//                if (action_index == 0)
-//                {
-//                    sendDcmotorCommand(1500, 400, true, true);
-//                    status = DC_MOTOR_DOWN;
-//                }
-//                else
-//                {
-//                    if (acu_data_pack.actions[action_index].method == 1)
-//                        sendQuezhuoCommand(true);
-//                    else if (acu_data_pack.actions[action_index].method == 2)
-//                        sendDiananCommand(true);
-//                    else if (acu_data_pack.actions[action_index].method == 3)
-//                        sendHuayuanCommand(true);
-//                    //status = IN_TREATMENT;
-
-//                    timeRemaining = acu_data_pack.actions[action_index].time * 10;
-//                }
-
-//            }
-//        }
-//    }
-
-//    //设定温度级别
-//    else if (command == 0x40)//设定温度级别
-//    {
-//        if (device_id == 0x08)
-//        {
-//            unsigned short temp;
-//            temp = level2Temp(data[4]);
-//            cout << "收到设定温度级别，设定温度为" << temp << "度" << endl;
-//            sendSetTemperature(temp * 10);
-//        }
-//    }
 }
 
 

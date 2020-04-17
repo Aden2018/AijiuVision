@@ -44,6 +44,8 @@ public:
 
     Mat imageRotate90(Mat src);//选择90度
     Mat imageRatateNegative90(Mat src);//选择-90度
+    Mat ImageStitchByHconcat(Mat left,Mat right,Rect roi);
+    void ShowImage(Mat srcImage);//显示图像
 
     //将二维坐标转换成三维坐标
     Vec3f xy2XYZ(const char* imageName_L,const char* imageName_R,int x,int y);
@@ -98,7 +100,6 @@ private slots:
     void on_pushButton_clicked();
     void read_data();
     void on_deleteAll_clicked();
- //   void on_deleteSingleItem_clicked();
 
     void on_saveButton_clicked();
 

@@ -90,7 +90,9 @@ Mat StittchBySurf(Mat a,Mat b) //a：右边图像，b：左边图像
     drawMatches(b, key2, a, key1, good_matches, outimg, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);  //绘制匹配点
 
 
-  //  imshow("桌面", outimg);
+    imshow("combine", outimg);
+
+    return Mat();
 
     ///////////////////////图像配准及融合////////////////////////
 
@@ -130,6 +132,10 @@ Mat StittchBySurf(Mat a,Mat b) //a：右边图像，b：左边图像
     dst.setTo(0);
 
     imageTransform1.copyTo(dst(Rect(0, 0, imageTransform1.cols, imageTransform1.rows)));
+ //   cout<<dst_height<<","<<dst_height<<","<<b.cols<<","<<b.rows<<endl;
+  //  cout<<b<<endl;
+   // imshow("dst",dst);
+  //  return b;
     b.copyTo(dst(Rect(0, 0, b.cols, b.rows)));
 
     OptimizeSeam(b, imageTransform1, dst);
@@ -144,7 +150,7 @@ Mat StitchImageByOrb(Mat a,Mat b) //a右图,b左图
 
     Ptr<ORB> orb;            //创建方式和OpenCV2中的不一样,并且要加上命名空间xfreatures2d
                                //否则即使配置好了还是显示SURF为未声明的标识符
-    orb = ORB::create(800);
+    orb = ORB::create(2000);
 
     BFMatcher matcher;         //实例化一个暴力匹配器
     Mat c, d;
@@ -170,7 +176,7 @@ Mat StitchImageByOrb(Mat a,Mat b) //a右图,b左图
 
     Mat outimg;                            //drawMatches这个函数直接画出摆在一起的图
     drawMatches(b, key2, a, key1, good_matches, outimg, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);  //绘制匹配点
-//    imshow("combine", outimg);
+    imshow("combine", outimg);
 
     //计算图像配准点
     vector<Point2f> imagePoints1, imagePoints2;
@@ -340,7 +346,7 @@ Mat StitchImageBySift(Mat a,Mat b) //a右图,b左图
 
     Ptr<SIFT> sift;            //创建方式和OpenCV2中的不一样,并且要加上命名空间xfreatures2d
                               //否则即使配置好了还是显示SURF为未声明的标识符
-    sift = SIFT::create(800);
+    sift = SIFT::create(2000);
 
     BFMatcher matcher;         //实例化一个暴力匹配器
     Mat c, d;
@@ -366,7 +372,7 @@ Mat StitchImageBySift(Mat a,Mat b) //a右图,b左图
 
     Mat outimg;                            //drawMatches这个函数直接画出摆在一起的图
     drawMatches(b, key2, a, key1, good_matches, outimg, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);  //绘制匹配点
-//    imshow("combine", outimg);
+    imshow("combine", outimg);
 
     //计算图像配准点
     vector<Point2f> imagePoints1, imagePoints2;

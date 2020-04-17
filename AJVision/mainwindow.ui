@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1098</width>
+    <width>972</width>
     <height>687</height>
    </rect>
   </property>
@@ -89,14 +89,14 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>300</x>
       <y>10</y>
       <width>641</width>
       <height>641</height>
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>image</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBox_2">
