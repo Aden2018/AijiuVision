@@ -23,6 +23,7 @@
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/opencv.hpp>
 #include "imagestittch.h"
+#include "stereomatch.h"
 
 using namespace cv;
 using namespace std;
@@ -134,7 +135,9 @@ private:
     bool m_bShowImage;
     bool m_bRotateImage;
 
-     Mat distortion;
+    Mat distortion;//矫正后的图像
+
+    StereoMatch *pStereoMatch;
 };
 
 

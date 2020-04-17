@@ -14,7 +14,6 @@ bool bToNegativeLimit = false;  //到达负限位标志
 bool bDirectionError  = false;  //方向错误标志
 bool bToLimit = false;          //到达限位标志
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -23,8 +22,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setMouseTracking(false);//设置窗体可响应 Mouse Move
 
-    Mat src;// = imread("d:\\1.jpg");
-    imwrite("lgy.jpg",src);
+    pStereoMatch = new StereoMatch();//初始化，加载内参、外参以及其他相关参数
+
+//    Mat imageLeft,imageRight;
+//    Mat rectifyImageL, rectifyImageR, disp8, xyz;
+//    pStereoMatch->stereo_match(imageLeft,imageRight,rectifyImageL,rectifyImageR,disp8,xyz);
 
     m_bSaveImage = false;
     m_bRotateImage = false;
@@ -48,24 +50,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     InitialCom();//初始化串口
 
-    ReadParameters();
+ //   ReadParameters();
 
 
-    //创建图像重投影映射表
-    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
-        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
+//    //创建图像重投影映射表
+//    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
+//        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
 
 //    computeDisparityImage(imread("d:\\3.jpg"), imread("d:\\4.jpg"), img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
 //    reprojectImageTo3D(disparity, result3DImage, Q);
-
-//    Mat_<float> invec = (Mat_<float>(3, 1) << 0.04345, -0.05236, -0.01810);
-//    Mat  outMat;
-//    Rodrigues(invec, outMat);
-//    cout << outMat << endl;//打印矩阵
-
-//    Mat outvec;
-//    Rodrigues(outMat, outvec);
-//    cout << outvec << endl;
 
 }
 //鼠标点击事件
@@ -130,6 +123,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    if(pStereoMatch)
+        delete pStereoMatch;
     //关闭相机
     if(capture.isOpened())
     {
