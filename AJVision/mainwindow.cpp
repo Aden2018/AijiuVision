@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setMouseTracking(false);//设置窗体可响应 Mouse Move
 
+    Mat src;// = imread("d:\\1.jpg");
+    imwrite("lgy.jpg",src);
+
     m_bSaveImage = false;
     m_bRotateImage = false;
 
@@ -41,27 +44,19 @@ MainWindow::MainWindow(QWidget *parent) :
     //初始化定时器
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-    timer->start(100);
+    timer->start(500);
 
     InitialCom();//初始化串口
 
     ReadParameters();
-//    cout<<cameraMatrix_L<<endl;
-//    cout<<distCoeffs_L<<endl;
-//    cout<<cameraMatrix_R<<endl;
-//    cout<<distCoeffs_R<<endl;
-//    cout<<R<<endl;
-//    cout<<T<<endl;
 
-//    //创建图像重投影映射表
-//    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
-//        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
-//    cout<<cameraMatrix_L<<endl;
-//    cout<<distCoeffs_L<<endl;
-//    cout<<cameraMatrix_R<<endl;
-//    cout<<distCoeffs_R<<endl;
-//    cout<<R<<endl;
-//    cout<<T<<endl;
+
+    //创建图像重投影映射表
+    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
+        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
+
+//    computeDisparityImage(imread("d:\\3.jpg"), imread("d:\\4.jpg"), img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
+//    reprojectImageTo3D(disparity, result3DImage, Q);
 
 //    Mat_<float> invec = (Mat_<float>(3, 1) << 0.04345, -0.05236, -0.01810);
 //    Mat  outMat;
@@ -171,10 +166,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-Vec3f  MainWindow::xy2XYZ(const char* imageName_L,const char* imageName_R,int x,int y)
+Vec3f  MainWindow::xy2XYZ(Mat imgLeft,Mat imgRight, int x,int y)
 {
     //视差图建立
-    computeDisparityImage(imageName_L, imageName_R, img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
+    computeDisparityImage(imgLeft, imgRight, img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
     // 从三维投影获得深度映射
     reprojectImageTo3D(disparity, result3DImage, Q);
 
@@ -236,19 +231,32 @@ void MainWindow::handleTimeout()
             image_l = imageRatateNegative90(image_l);
 
         distortion = image_l.clone();
+       Mat  distortion2 = image_r.clone();
         Mat camera_matrix = Mat(3, 3, CV_32FC1);
         Mat distortion_coefficients;
 
-         QImage img_2;
-        //矫正
-        if(camera_matrix.data&&distCoeffs_L.data)
-        {
-            cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
-            ShowImage(distortion);
-        }
-        else {
-            ShowImage(image_l);
-        }
+        cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
+        cv::undistort(image_r, distortion2, cameraMatrix_R, distCoeffs_R);
+
+        imshow("left",distortion);
+        imshow("right",distortion2);
+
+//         QImage img_2;
+//        //矫正
+//        if(camera_matrix.data&&distCoeffs_L.data)
+//        {
+//            cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
+//            ShowImage(distortion);
+//        }
+//        else {
+//            ShowImage(image_l);
+//        }
+
+//        computeDisparityImage(image_l, image_r, img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
+//        reprojectImageTo3D(disparity, result3DImage, Q);
+//        cout << disparity<< endl;
+     //   cout << result3DImage << endl;
+       // imshow("disparity", disparity);
 
        if(m_bSaveImage)
        {
@@ -370,6 +378,13 @@ void MainWindow::ReadParameters()
         fs["T"] >> T;
         fs["imageSize"] >> imageSize;
         fs.release();
+
+        cout << cameraMatrix_L << endl;
+        cout << distCoeffs_L << endl;
+        cout << cameraMatrix_R << endl;
+        cout << distCoeffs_R << endl;
+        cout << R << endl;
+        cout << T << endl;
     }
 }
 
@@ -408,29 +423,35 @@ void MainWindow::stereoRectification(Mat& cameraMatrix1, Mat& distCoeffs1, Mat& 
     img2_rectified	重映射后的右侧相机图像
     map	重投影映射表
 */
-bool MainWindow::computeDisparityImage(const char* imageName1, const char* imageName2, Mat& img1_rectified,
+bool MainWindow::computeDisparityImage(Mat img1, Mat img2, Mat& img1_rectified,
     Mat& img2_rectified, Mat& mapl1, Mat& mapl2, Mat& mapr1, Mat& mapr2, Rect validRoi[2], Mat& disparity)
 {
     // 首先，对左右相机的两张图片进行重构
-    Mat img1 = imread(imageName1);
-    Mat img2 = imread(imageName2);
+//    Mat img1 = imread(imageName1);
+//    Mat img2 = imread(imageName2);
     if (img1.empty() | img2.empty())
     {
         qDebug() << "图像为空" << endl;
+        return false;
     }
     Mat gray_img1, gray_img2;
     cvtColor(img1, gray_img1, COLOR_BGR2GRAY);
     cvtColor(img2, gray_img2, COLOR_BGR2GRAY);
+    imshow("gray_img1",gray_img1);
+    imshow("gray_img2",gray_img2);
     Mat canvas(imageSize.height, imageSize.width * 2, CV_8UC1); // 注意数据类型
     Mat canLeft = canvas(Rect(0, 0, imageSize.width, imageSize.height));
     Mat canRight = canvas(Rect(imageSize.width, 0, imageSize.width, imageSize.height));
-    gray_img1.copyTo(canLeft);
-    gray_img2.copyTo(canRight);
+  //  gray_img1.copyTo(canLeft);
+  //  gray_img2.copyTo(canRight);
+ //   imshow("canvas",canvas);
     imwrite("校正前左右相机图像.jpg", canvas);
     remap(gray_img1, img1_rectified, mapl1, mapl2, INTER_LINEAR);
     remap(gray_img2, img2_rectified, mapr1, mapr2, INTER_LINEAR);
     imwrite("左相机校正图像.jpg", img1_rectified);
     imwrite("右相机校正图像.jpg", img2_rectified);
+ //   imshow("img1_rectified",img1_rectified);
+  //  imshow("img2_rectified",img2_rectified);
     img1_rectified.copyTo(canLeft);
     img2_rectified.copyTo(canRight);
     rectangle(canLeft, validRoi[0], Scalar(255, 255, 255), 5, 8);
@@ -441,6 +462,8 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
     // 进行立体匹配
     Ptr<StereoBM> bm = StereoBM::create(16, 9); // Ptr<>是一个智能指针
     bm->compute(img1_rectified, img2_rectified, disparity); // 计算视差图
+  //  imshow("img1_rectified",img1_rectified);
+ //   imshow("img2_rectified",img2_rectified);
     disparity.convertTo(disparity, CV_32F, 1.0 / 16);
     // 归一化视差映射
     normalize(disparity, disparity, 0, 256, NORM_MINMAX, -1);
@@ -455,9 +478,10 @@ bool MainWindow::computeDisparityImage(const char* imageName1, const char* image
   返回：
    mat 拼接之后的图像
 */
-Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,Rect roi)
+Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,Rect  roi)
 {
     Mat dst;
+  //   Rect rectRight(cols, 0, right.cols - cols, right.rows);
     right = Mat(right,roi);
 
     hconcat(left,right,dst);

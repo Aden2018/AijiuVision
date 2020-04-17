@@ -48,9 +48,9 @@ public:
     void ShowImage(Mat srcImage);//显示图像
 
     //将二维坐标转换成三维坐标
-    Vec3f xy2XYZ(const char* imageName_L,const char* imageName_R,int x,int y);
+    Vec3f xy2XYZ(Mat imgLeft,Mat imgRight,int x,int y);
     //计算视差图
-    bool computeDisparityImage(const char* imageName1, const char* imageName2, Mat& img1_rectified,
+    bool computeDisparityImage(Mat img1, Mat img2, Mat& img1_rectified,
         Mat& img2_rectified, Mat& mapl1, Mat& mapl2, Mat& mapr1, Mat& mapr2, Rect validRoi[2], Mat& disparity);
 
     //立体校正
