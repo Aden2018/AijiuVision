@@ -24,6 +24,7 @@
 #include <opencv2/opencv.hpp>
 #include "imagestittch.h"
 #include "stereomatch.h"
+#include "global.h" //目标检测算法，使用算法计算左右相机图像同一点的坐标值
 
 using namespace cv;
 using namespace std;

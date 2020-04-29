@@ -33,13 +33,15 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     imagestittch.cpp \
-    stereomatch.cpp
+    stereomatch.cpp \
+    global.cpp
 
 HEADERS += \
         mainwindow.h \
     imagestittch.h \
     coordinatetransform.h \
-    stereomatch.h
+    stereomatch.h \
+    global.h
 
 FORMS += \
         mainwindow.ui
