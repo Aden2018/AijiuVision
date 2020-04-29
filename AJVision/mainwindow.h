@@ -23,6 +23,7 @@
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/opencv.hpp>
 #include "imagestittch.h"
+#include "stereomatch.h"
 
 using namespace cv;
 using namespace std;
@@ -156,7 +157,11 @@ private:
     Cute_Solution cuteArray[50];//治疗方案
     int acupointNum;            //穴位数目
 
-     Mat distortion;
+
+    Mat distortion;//矫正后的图像
+
+    StereoMatch *pStereoMatch;
+
 };
 
 

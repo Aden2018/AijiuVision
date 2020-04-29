@@ -32,12 +32,14 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    imagestittch.cpp
+    imagestittch.cpp \
+    stereomatch.cpp
 
 HEADERS += \
         mainwindow.h \
     imagestittch.h \
-    coordinatetransform.h
+    coordinatetransform.h \
+    stereomatch.h
 
 FORMS += \
         mainwindow.ui

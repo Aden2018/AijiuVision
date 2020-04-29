@@ -14,7 +14,6 @@ bool bToNegativeLimit = false;  //到达负限位标志
 bool bDirectionError  = false;  //方向错误标志
 bool bToLimit = false;          //到达限位标志
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -23,8 +22,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setMouseTracking(false);//设置窗体可响应 Mouse Move
 
-    Mat src;// = imread("d:\\1.jpg");
-    imwrite("lgy.jpg",src);
+    pStereoMatch = new StereoMatch();//初始化，加载内参、外参以及其他相关参数
+
+//    Mat imageLeft,imageRight;
+//    Mat rectifyImageL, rectifyImageR, disp8, xyz;
+//    pStereoMatch->stereo_match(imageLeft,imageRight,rectifyImageL,rectifyImageR,disp8,xyz);
 
     m_bSaveImage = false;
     m_bRotateImage = false;
@@ -60,6 +62,7 @@ Mat MainWindow::jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs 
     Mat t = image.clone();
     cv::remap( image, t, mapx, mapy, INTER_LINEAR);
     return t;
+
 }
 
 //鼠标点击事件
@@ -124,6 +127,8 @@ Mat MainWindow::jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs 
 
 MainWindow::~MainWindow()
 {
+    if(pStereoMatch)
+        delete pStereoMatch;
     //关闭相机
     if(capture.isOpened())
     {
