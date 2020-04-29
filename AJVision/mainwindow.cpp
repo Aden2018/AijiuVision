@@ -32,14 +32,12 @@ MainWindow::MainWindow(QWidget *parent) :
     QStringList text;
     text<<tr("SURF")<<tr("ORB")<<tr("SIFT");
     ui->comboBox_Algorihm->addItems(text);
-
-
-     ui->listWidget->setViewMode(QListView::ListMode);   //设置显示模式为列表模式
+    ui->listWidget->setViewMode(QListView::ListMode);   //设置显示模式为列表模式
 
     //udp初始化
     mSocket = new QUdpSocket(this);
-    connect(mSocket,SIGNAL(readyRead()),this,SLOT(read_data()),Qt::DirectConnection);
-    qDebug()<< mSocket->bind(QHostAddress::Any, 8888);
+    connect(mSocket,SIGNAL(readyRead()),this,SLOT(slotUDPReadyRead()));
+    qDebug()<< mSocket->bind(QHostAddress::Any, 65520);
 
     //初始化定时器
     timer = new QTimer(this);
@@ -49,25 +47,21 @@ MainWindow::MainWindow(QWidget *parent) :
     InitialCom();//初始化串口
 
     ReadParameters();
-
-
-    //创建图像重投影映射表
-    stereoRectification(cameraMatrix_L, distCoeffs_L, cameraMatrix_R, distCoeffs_R,
-        imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
-
-//    computeDisparityImage(imread("d:\\3.jpg"), imread("d:\\4.jpg"), img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
-//    reprojectImageTo3D(disparity, result3DImage, Q);
-
-//    Mat_<float> invec = (Mat_<float>(3, 1) << 0.04345, -0.05236, -0.01810);
-//    Mat  outMat;
-//    Rodrigues(invec, outMat);
-//    cout << outMat << endl;//打印矩阵
-
-//    Mat outvec;
-//    Rodrigues(outMat, outvec);
-//    cout << outvec << endl;
-
 }
+
+Mat MainWindow::jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs )
+{
+    Size image_size = image.size();
+    Mat R = Mat::eye(3,3,CV_32F);
+    Mat mapx = Mat(image_size,CV_32FC1);
+    Mat mapy = Mat(image_size,CV_32FC1);
+    Mat new_intrinsic_matrix;
+    initUndistortRectifyMap(intrinsic_matrix,distortion_coeffs,R,new_intrinsic_matrix,image_size,CV_32FC1,mapx,mapy);
+    Mat t = image.clone();
+    cv::remap( image, t, mapx, mapy, INTER_LINEAR);
+    return t;
+}
+
 //鼠标点击事件
  void MainWindow::mousePressEvent(QMouseEvent *event)
  {
@@ -201,14 +195,33 @@ void MainWindow::addToList(QString str)
     ui->listWidget->addItem(item);          //加载列表项到列表框
 }
 
-void MainWindow::read_data()
+void MainWindow::slotUDPReadyRead()
 {
-    QByteArray array;
-    QHostAddress address;
-    quint16 port;
-    array.resize(mSocket->bytesAvailable());//根据可读数据来设置空间大小
-    mSocket->readDatagram(array.data(),array.size(),&address,&port); //读取数据
-    ui->listWidget->addItem(array);//显示数据
+    while(mSocket->hasPendingDatagrams())  //有未处理的报文
+    {
+        QByteArray recvMsg;
+        qint64 length = mSocket->pendingDatagramSize();//接收数据包长度
+        int size = sizeof (Cute_Solution);
+
+        acupointNum = static_cast<int>(length/size);
+
+        recvMsg.resize(static_cast<int>(length));
+
+        mSocket->readDatagram(recvMsg.data(),recvMsg.size());
+
+        if(acupointNum > 0)
+        {
+            memcpy((char*)cuteArray,recvMsg.data(),static_cast<size_t>(length));
+
+            static int cnt = 0;
+            cnt++;
+
+            for(int i=0;i<acupointNum;i++)
+            {
+                qDebug()<< cnt << ":" << i+1 << "," << cuteArray[i].no << "," << cuteArray[i].x << "," << cuteArray[i].y << "," << cuteArray[i].cute << "," << cuteArray[i].time << endl;
+            }
+        }
+    }
 
 }
 
@@ -227,36 +240,19 @@ void MainWindow::handleTimeout()
         Mat image_l = Mat(frame, rectLeft);
         Mat image_r = Mat(frame, rectRight);
 
+
+
         if(m_bRotateImage)
+        {
             image_l = imageRatateNegative90(image_l);
+            image_r = imageRatateNegative90(image_r);
+        }
 
-        distortion = image_l.clone();
-       Mat  distortion2 = image_r.clone();
-        Mat camera_matrix = Mat(3, 3, CV_32FC1);
-        Mat distortion_coefficients;
+      //  imshow("left",jiaozheng(image_l,cameraMatrix_L,distCoeffs_L));
+     //   imshow("right",jiaozheng(image_r,cameraMatrix_R,distCoeffs_R));
 
-        cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
-        cv::undistort(image_r, distortion2, cameraMatrix_R, distCoeffs_R);
-
-        imshow("left",distortion);
-        imshow("right",distortion2);
-
-//         QImage img_2;
-//        //矫正
-//        if(camera_matrix.data&&distCoeffs_L.data)
-//        {
-//            cv::undistort(image_l, distortion, cameraMatrix_L, distCoeffs_L);
-//            ShowImage(distortion);
-//        }
-//        else {
-//            ShowImage(image_l);
-//        }
-
-//        computeDisparityImage(image_l, image_r, img1_rectified, img2_rectified, mapl1, mapl2, mapr1, mapr2, validRoi, disparity);
-//        reprojectImageTo3D(disparity, result3DImage, Q);
-//        cout << disparity<< endl;
-     //   cout << result3DImage << endl;
-       // imshow("disparity", disparity);
+        imshow("left",image_l);
+        imshow("right",image_r);
 
        if(m_bSaveImage)
        {
@@ -379,12 +375,12 @@ void MainWindow::ReadParameters()
         fs["imageSize"] >> imageSize;
         fs.release();
 
-        cout << cameraMatrix_L << endl;
-        cout << distCoeffs_L << endl;
-        cout << cameraMatrix_R << endl;
-        cout << distCoeffs_R << endl;
-        cout << R << endl;
-        cout << T << endl;
+//        cout << cameraMatrix_L << endl;
+//        cout << distCoeffs_L << endl;
+//        cout << cameraMatrix_R << endl;
+//        cout << distCoeffs_R << endl;
+//        cout << R << endl;
+//        cout << T << endl;
     }
 }
 
@@ -789,24 +785,6 @@ void MainWindow::processSerialBuffer(const char* data)
     }
 
 }
-
-
-Mat MainWindow::jiaozheng( Mat image )
-{
-    Size image_size = image.size();
-    Mat R = Mat::eye(3,3,CV_32F);
-    Mat mapx = Mat(image_size,CV_32FC1);
-    Mat mapy = Mat(image_size,CV_32FC1);
-    Mat intrinsic_matrix;
-    initUndistortRectifyMap(cameraMatrix_L,distCoeffs_L,R,intrinsic_matrix,image_size,CV_32FC1,mapx,mapy);
-    Mat t = image.clone();
-    cv::remap( image, t, mapx, mapy, INTER_LINEAR);
-    return t;
-}
-
-
-
-
 
 void MainWindow::on_saveButton_clicked()
 {

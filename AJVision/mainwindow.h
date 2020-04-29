@@ -27,6 +27,26 @@
 using namespace cv;
 using namespace std;
 
+#pragma pack(1)  //指定一字节对齐
+//治疗方案结构体
+struct Cute_Solution
+{
+    int no;        //治疗顺序
+    float x;      //中心点x坐标
+    float y;      //中心点y坐标
+    int cute;  //治疗方案：1:点按、2:画圆、3:雀琢
+    int time;      //治疗时间，单位分钟
+    Cute_Solution()
+    {
+        no = 0;
+        x = 0.0;
+        y = 0.0;
+        cute = 1;
+        time = 0;
+    }
+};
+
+#pragma pack()  //取消指定对齐，恢复缺省对齐
 
 namespace Ui {
 class MainWindow;
@@ -70,8 +90,7 @@ public:
     //处理串口数据包
     void processSerialBuffer(const char* data);
 
-    //需要校正处理的图片
-    Mat jiaozheng(Mat image);
+    Mat jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs );
 
     //计算校验值
     unsigned char jiaoyan(unsigned char* data);
@@ -98,7 +117,7 @@ public slots:
     void Read_Data();      //串口读写类
 private slots:
     void on_pushButton_clicked();
-    void read_data();
+    void slotUDPReadyRead();
     void on_deleteAll_clicked();
 
     void on_saveButton_clicked();
@@ -133,6 +152,9 @@ private:
     bool m_bSaveImage;
     bool m_bShowImage;
     bool m_bRotateImage;
+
+    Cute_Solution cuteArray[50];//治疗方案
+    int acupointNum;            //穴位数目
 
      Mat distortion;
 };
