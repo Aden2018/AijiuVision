@@ -34,14 +34,15 @@ SOURCES += \
         mainwindow.cpp \
     imagestittch.cpp \
     stereomatch.cpp \
-    global.cpp
+    global.cpp \
+    transfrom.cpp
 
 HEADERS += \
         mainwindow.h \
     imagestittch.h \
-    coordinatetransform.h \
     stereomatch.h \
-    global.h
+    global.h \
+    transfrom.h
 
 FORMS += \
         mainwindow.ui

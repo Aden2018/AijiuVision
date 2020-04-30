@@ -24,7 +24,8 @@
 #include <opencv2/opencv.hpp>
 #include "imagestittch.h"
 #include "stereomatch.h"
-#include "global.h" //目标检测算法，使用算法计算左右相机图像同一点的坐标值
+#include "global.h"          //目标检测算法，使用算法计算左右相机图像同一点的坐标值
+#include "transfrom.h"       //坐标转换
 
 using namespace cv;
 using namespace std;
@@ -59,7 +60,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 protected:
      void mousePressEvent(QMouseEvent *event);//鼠标点击事件
-     void mouseMoveEvent(QMouseEvent *event); //鼠标移动事件
+//     void mouseMoveEvent(QMouseEvent *event); //鼠标移动事件
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();

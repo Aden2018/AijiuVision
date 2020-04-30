@@ -149,9 +149,9 @@ Mat DetectRedTarget(Mat input)
     return vec_rgb;
 }
 
-vector<Point2f> GetTargetCoordinate(Mat in) //获取红色目标坐标
+vector<Point2f> GetTargetCoordinate(Mat src) //输入图像，获取红色目标坐标
 {
-    Mat matSrc = in;
+    Mat matSrc = DetectRedTarget(src);
 
     GaussianBlur(matSrc, matSrc, Size(5, 5), 0);//高斯滤波，除噪点
 

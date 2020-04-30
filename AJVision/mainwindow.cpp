@@ -24,10 +24,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     pStereoMatch = new StereoMatch();//初始化，加载内参、外参以及其他相关参数
 
-//    Mat imageLeft,imageRight;
-//    Mat rectifyImageL, rectifyImageR, disp8, xyz;
-//    pStereoMatch->stereo_match(imageLeft,imageRight,rectifyImageL,rectifyImageR,disp8,xyz);
-
     m_bSaveImage = false;
     m_bRotateImage = false;
 
@@ -119,11 +115,11 @@ Mat MainWindow::jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs 
      }
  }
 
- //第二步：移动鼠标获取图像坐标和灰度值（按下左键移动鼠标）
- void MainWindow::mouseMoveEvent(QMouseEvent *event)
- {
+// //第二步：移动鼠标获取图像坐标和灰度值（按下左键移动鼠标）
+// void MainWindow::mouseMoveEvent(QMouseEvent *event)
+// {
 
- }
+// }
 
 MainWindow::~MainWindow()
 {
@@ -226,6 +222,25 @@ void MainWindow::slotUDPReadyRead()
                 qDebug()<< cnt << ":" << i+1 << "," << cuteArray[i].no << "," << cuteArray[i].x << "," << cuteArray[i].y << "," << cuteArray[i].cute << "," << cuteArray[i].time << endl;
             }
         }
+
+        //像素坐标转三维坐标
+        /*
+        //左右相机像素坐标
+        Point2f l;
+        l.x = cuteArray[0].x;
+        l.y = cuteArray[0].y;
+
+        Mat image_r;//右相机图像
+
+        //右相机像素坐标
+        vector<Point2f> targetPoints = GetTargetCoordinate(image_r);
+        Point2f r;
+        r.x = targetPoints[0].x;
+        r.y = targetPoints[0].y;
+
+        Point3f worldPoint = uv2xyz(l,r);
+        */
+
     }
 
 }
@@ -322,7 +337,7 @@ void MainWindow::ShowImage(Mat srcImage)
     QImage img;
     cvtColor(srcImage, srcImage, CV_BGR2RGB);
     img = QImage((const unsigned char*)srcImage.data, // uchar* data
-        srcImage.cols, srcImage.rows, srcImage.step, QImage::Format_RGB888);
+                 static_cast<int>(srcImage.cols), static_cast<int>(srcImage.rows), static_cast<int>(srcImage.step), QImage::Format_RGB888);
 
 
 //   int a2 = ui->label->width();
@@ -339,7 +354,7 @@ void MainWindow::Read_Data()//串口读取函数
     //QByteArray 转换为 char *
     char *rxData;//不要定义成ch[n];
     rxData = buf.data();
-    int size = buf.size();
+    //int size = buf.size();
 
     processSerialBuffer(rxData);
 
@@ -566,18 +581,18 @@ void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)
                 mes.uTransFrameSize = 996;
             }
             else {
-                mes.uTransFrameSize = endSize;
+                mes.uTransFrameSize =static_cast<unsigned int>(endSize);
             }
             //qDebug()<<size;
-            mes.uDataFrameSize = size;
-            mes.uDataFrameTotal = num;
+            mes.uDataFrameSize  = static_cast<unsigned int>(size);
+            mes.uDataFrameTotal = static_cast<unsigned int>(num);
             mes.uDataFrameCurr = count+1;
             mes.uDataInFrameOffset = count*(1024 - sizeof(ImageFrameHead));
 
             file.read(m_sendBuf+sizeof(ImageFrameHead), 1024-sizeof(ImageFrameHead));
 
             memcpy(m_sendBuf, (char *)&mes, sizeof(ImageFrameHead));
-            mSocket->writeDatagram(m_sendBuf, mes.uTransFrameSize+mes.uTransFrameHdrSize, QHostAddress(ip)/*QHostAddress("192.168.56.1")*/, port);
+            mSocket->writeDatagram(m_sendBuf, mes.uTransFrameSize+mes.uTransFrameHdrSize, QHostAddress(ip)/*QHostAddress("192.168.56.1")*/, static_cast<quint16>(port));
             QTime dieTime = QTime::currentTime().addMSecs(1);
             while( QTime::currentTime() < dieTime )
                 QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
@@ -637,9 +652,10 @@ void MainWindow::processSerialBuffer(const char* data)
           //  cout << "X轴位移完成" << endl;
             coarse_x = 0;
             unsigned short temp;
-            temp = (unsigned char)data[5];
+
+            temp =  static_cast<unsigned char>(data[5]);
             coarse_x |= temp;
-            temp = (unsigned char)data[6];
+            temp =  static_cast<unsigned char>(data[6]);
             coarse_x |= temp << 8;
             //printf("%x %x\n", udata[5], udata[6]);
             QString strPos("x轴当前位置:");
@@ -683,7 +699,7 @@ void MainWindow::processSerialBuffer(const char* data)
         }
 
         unsigned char status = (unsigned char)data[4];
-        if(status&0x1 == 1) //bit0 使能停机标志
+        if((status&0x1) == 1) //bit0 使能停机标志
         {
             addToList("不是使用使能位停机");
             bUseEnableShutdown = true;
@@ -694,7 +710,7 @@ void MainWindow::processSerialBuffer(const char* data)
             bUseEnableShutdown = false;
         }
 
-        if(status&0x2 == 1) //bit1 距离完成标志
+        if((status&0x2) == 1) //bit1 距离完成标志
         {
             addToList("不是使用使能位停机");
             bDistanceDone = true;
@@ -705,7 +721,7 @@ void MainWindow::processSerialBuffer(const char* data)
             bDistanceDone = false;
         }
 
-        if(status&0x4 == 1)//时间耗尽标志
+        if((status&0x4) == 1)//时间耗尽标志
         {
             addToList("时间耗尽");
             bTimeUseup = true;
@@ -716,7 +732,7 @@ void MainWindow::processSerialBuffer(const char* data)
             bTimeUseup = false;
         }
 
-        if(status&0x8 == 1)//到达指定位置标志
+        if((status&0x8) == 1)//到达指定位置标志
         {
             addToList("到达指定位置");
             bToAppiontPos = true;
@@ -727,7 +743,7 @@ void MainWindow::processSerialBuffer(const char* data)
             bToAppiontPos = false;
         }
 
-        if(status&0x10 == 1)//到达负限位标志
+        if((status&0x10) == 1)//到达负限位标志
         {
             addToList("到达负限位");
             bToNegativeLimit = true;
@@ -738,7 +754,7 @@ void MainWindow::processSerialBuffer(const char* data)
             bToNegativeLimit = false;
         }
 
-        if(status&0x20 == 1)//方向错误标志
+        if((status&0x20) == 1)//方向错误标志
         {
             addToList("方向无误");
             bDirectionError = true;
@@ -750,7 +766,7 @@ void MainWindow::processSerialBuffer(const char* data)
         }
 
 
-        if(status&0x40 == 1)//到达限位标志
+        if((status&0x40) == 1)//到达限位标志
         {
             addToList("到达限位");
             bToLimit = true;
@@ -814,7 +830,7 @@ void MainWindow::SendMotorResetCmd(int id,int speed,int pos)
     unsigned char txData[20] = {0};
 
     txData[0] = 0x5a;
-    txData[1] = id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[1] = (unsigned char)id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
     txData[2] = 0x21;//下行数据帧：复位指令
     txData[4] = speed&0xff;//低8位
     txData[5] = (speed>>8)&0xff;//高8位
