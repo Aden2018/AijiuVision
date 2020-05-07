@@ -98,7 +98,7 @@ public:
     //计算校验值
     unsigned char jiaoyan(unsigned char* data);
     //电机复位
-    void SendMotorResetCmd(int id,int speed,int pos);
+    void SendMotorResetCmd(int id);
     //电机运动
     void SendMotorRunCmd(int id,int speed,int pos);
     //温度控制
@@ -128,6 +128,10 @@ private slots:
     void on_checkBox_clicked(bool checked);
 
     void on_checkBox_2_clicked(bool checked);
+
+    void on_moveButton_clicked();
+
+    void on_resetButton_clicked();
 
 private:
     Ui::MainWindow *ui;

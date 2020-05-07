@@ -633,11 +633,11 @@ unsigned char MainWindow::SerialCheckSum(unsigned char *buf, unsigned char len)
 //处理串口缓冲区数据
 void MainWindow::processSerialBuffer(const char* data)
 {
-    if (SerialCheckSum((unsigned char*)data, 10) != (unsigned char)data[10])
-    {
-        cout << "CRC校验和不符!" << endl;
-        return;
-    }
+//    if (SerialCheckSum((unsigned char*)data, 10) != (unsigned char)data[10])
+//    {
+//        addToList("CRC校验和不符");
+//        return;
+//    }
 
     unsigned char device_id, command;
     device_id = data[1];//设备id
@@ -825,17 +825,24 @@ unsigned char MainWindow::jiaoyan(unsigned char* data)
 }
 
 //电机复位指令帧
-void MainWindow::SendMotorResetCmd(int id,int speed,int pos)
+void MainWindow::SendMotorResetCmd(int id)
 {
+
+    /*
+    横轴电机复位5A 00 21  00   64 00   00 00   00 00   DF   x轴步进电机复位。
+    纵轴电机复位5A 01 21  00   64 00   00 00   00 00   E0   y轴步进电机复位
+    垂向电机复位5A 02 21  00   64 00   00 00   00 00   E1   Z轴步进电机复位
+    */
     unsigned char txData[20] = {0};
 
     txData[0] = 0x5a;
-    txData[1] = (unsigned char)id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[1] = static_cast<unsigned char>(id); //包括0:横轴电机、1:纵轴电机、2:垂向电机
     txData[2] = 0x21;//下行数据帧：复位指令
-    txData[4] = speed&0xff;//低8位
-    txData[5] = (speed>>8)&0xff;//高8位
-    txData[6] = pos&0xff;
-    txData[7] = (pos>>8)&0xff;
+    txData[3] = 0x00;
+    txData[4] = 0x64;//speed&0xff;//低8位
+//    txData[5] = (speed>>8)&0xff;//高8位
+//    txData[6] = pos&0xff;
+//    txData[7] = (pos>>8)&0xff;
     txData[10] = jiaoyan(txData);
 
     if(serial)
@@ -849,7 +856,7 @@ void MainWindow::SendMotorRunCmd(int id,int speed,int pos)
     unsigned char txData[20] = {0};
 
     txData[0] = 0x5a;
-    txData[1] = id; //包括0:横轴电机、1:纵轴电机、2:垂向电机
+    txData[1] = static_cast<unsigned char>(id); //包括0:横轴电机、1:纵轴电机、2:垂向电机
     txData[2] = 0x01;//下行数据帧：运动指令
     txData[4] = speed&0xff;//低8位
     txData[5] = (speed>>8)&0xff;//高8位
@@ -959,4 +966,37 @@ void MainWindow::on_checkBox_clicked(bool checked)
 void MainWindow::on_checkBox_2_clicked(bool checked)
 {
     m_bRotateImage = checked;
+}
+
+void MainWindow::on_moveButton_clicked()
+{
+    int pos = ui->lineEdit->text().toInt();
+
+    if(ui->radioButton_X->isChecked())
+    {
+        SendMotorRunCmd(0,1000,pos*10);
+    }
+    else if(ui->radioButton_Y->isChecked())
+    {
+        SendMotorRunCmd(1,1000,pos*10);
+    }
+    else {
+        SendMotorRunCmd(2,1000,pos*10);
+    }
+}
+
+void MainWindow::on_resetButton_clicked()
+{
+    if(ui->radioButton_X->isChecked())
+    {
+         SendMotorResetCmd(0x0);
+    }
+    else if(ui->radioButton_Y->isChecked())
+    {
+         SendMotorResetCmd(0x1);
+    }
+    else
+    {
+         SendMotorResetCmd(0x2);
+    }
 }
