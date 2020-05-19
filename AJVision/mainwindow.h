@@ -30,6 +30,15 @@
 using namespace cv;
 using namespace std;
 
+const double LENGTH_PER_PIXEL =  400/273.0;//每像素转换成mm
+
+//拍摄照片时x轴电机位置
+const int FIRST_CAPTURE_POSITION   = 100;//第一张照片拍摄位置
+const int SECOND_CAPTURE_POSITION  = 300;//第二张照片拍摄位置
+const int THIRD_CAPTURE_POSITION   = 500;//第三张照片拍摄位置
+const int FOURTH_CAPTURE_POSITION  = 700;//第四张照片拍摄位置
+
+
 #pragma pack(1)  //指定一字节对齐
 //治疗方案结构体
 struct Cute_Solution
@@ -37,7 +46,7 @@ struct Cute_Solution
     int no;        //治疗顺序
     float x;      //中心点x坐标
     float y;      //中心点y坐标
-    int cute;  //治疗方案：1:点按、2:画圆、3:雀琢
+    int cute;      //治疗方案：1:点按、2:画圆、3:雀琢
     int time;      //治疗时间，单位分钟
     Cute_Solution()
     {
@@ -59,7 +68,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 protected:
-     void mousePressEvent(QMouseEvent *event);//鼠标点击事件
+//     void mousePressEvent(QMouseEvent *event);//鼠标点击事件
 //     void mouseMoveEvent(QMouseEvent *event); //鼠标移动事件
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -117,6 +126,11 @@ public:
 
 public slots:
     void handleTimeout();  //超时处理函数
+    void handleTimeout1();
+    void handleTimeout2();
+    void handleTimeout3();
+    void handleTimeout4();
+
     void Read_Data();      //串口读写类
 private slots:
     void on_pushButton_clicked();
@@ -133,12 +147,18 @@ private slots:
 
     void on_resetButton_clicked();
 
+    void on_pushButton_capture_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     QUdpSocket *mSocket;    //UDP
 
     QTimer *timer;          //定时器
+    QTimer *timer_fisrt;           //定时器，拍摄第一张图片
+    QTimer *timer_second;          //定时器，拍摄第二张图片
+    QTimer *timer_third;           //定时器，拍摄第三张图片
+    QTimer *timer_fourth;          //定时器，拍摄第四张图片
     QSerialPort *serial;    //串口
     QVector<QString> vComs;
 
@@ -171,8 +191,8 @@ private:
 };
 
 
-extern bool x_step_finish;//X轴步进电机是否完成
-extern bool y_step_finish;//Y轴步进电机是否完成
+extern bool x_step_finish;     //X轴步进电机是否完成
+extern bool y_step_finish;     //Y轴步进电机是否完成
 extern unsigned short coarse_x;//x轴电机位置
 extern unsigned short coarse_y;//y轴电机位置
 extern unsigned short coarse_z;//z轴电机位置

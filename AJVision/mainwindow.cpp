@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     text<<tr("SURF")<<tr("ORB")<<tr("SIFT");
     ui->comboBox_Algorihm->addItems(text);
     ui->listWidget->setViewMode(QListView::ListMode);   //设置显示模式为列表模式
+    ui->comboBox_Algorihm->setVisible(false);
 
     //udp初始化
     mSocket = new QUdpSocket(this);
@@ -41,6 +42,18 @@ MainWindow::MainWindow(QWidget *parent) :
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
     timer->start(500);
+
+    timer_fisrt = new QTimer(this);
+    connect(timer_fisrt, SIGNAL(timeout()), this, SLOT(handleTimeout1()));
+
+    timer_second = new QTimer(this);
+    connect(timer_second, SIGNAL(timeout()), this, SLOT(handleTimeout2()));
+
+    timer_third = new QTimer(this);
+    connect(timer_third, SIGNAL(timeout()), this, SLOT(handleTimeout3()));
+
+    timer_fourth = new QTimer(this);
+    connect(timer_fourth, SIGNAL(timeout()), this, SLOT(handleTimeout4()));
 
     InitialCom();//初始化串口
 
@@ -61,65 +74,6 @@ Mat MainWindow::jiaozheng( Mat image,Mat intrinsic_matrix,Mat distortion_coeffs 
 
 }
 
-//鼠标点击事件
- void MainWindow::mousePressEvent(QMouseEvent *event)
- {
-     if(event->button()==Qt::LeftButton)
-     {
-
-         if(!distortion.data)
-             return;
-         int ImageWidth = distortion.cols;
-         int ImageHeight = distortion.rows;
-
-         QPoint viewPoint = event->globalPos();  //获取全局位置
-         viewPoint = ui->label->mapFromGlobal(viewPoint);
-
-         float w = ui->label->contentsRect().width();
-         float h = ui->label->contentsRect().height();
-         int col = int(viewPoint.x() * (ImageWidth / w));  //获取当前Label的坐标，按比例缩放为图片坐标
-         int row = int(viewPoint.y() * (ImageHeight / h));
-
-         if (row > 0 && row < ImageHeight && col > 0 && col < ImageWidth) //超出图像范围不显示坐标
-         {
-             QString strPosX = QString::number(col);
-             QString strPosY = QString::number(row);
-
-             cvtColor(distortion, distortion, CV_BGR2RGB);
-             QImage img_2 = QImage((const unsigned char*)distortion.data, // uchar* data
-                 distortion.cols, distortion.rows, distortion.step, QImage::Format_RGB888);
-
-             QRgb rgbPixel = img_2.pixel(col,row); //读入的图像为灰度图，任意通道像素值一样
-             int gray = qRed(rgbPixel);
-             QString strGray = QString::number(gray);
-
-             QString strShowData;// = strPosX + "," + strPosY + "," + strGray;
-             strShowData.append("x:");
-             strShowData.append(strPosX);
-
-             strShowData.append(",");
-             strShowData.append("y:");
-             strShowData.append(strPosY);
-
-             strShowData.append(",");
-             strShowData.append("灰度:");
-             strShowData.append(strPosX);
-
-             addToList(strShowData);
-         }
-     }
-     else if(event->button()==Qt::RightButton)
-     {
-         qDebug()<<"RightButton clicked!";
-
-     }
- }
-
-// //第二步：移动鼠标获取图像坐标和灰度值（按下左键移动鼠标）
-// void MainWindow::mouseMoveEvent(QMouseEvent *event)
-// {
-
-// }
 
 MainWindow::~MainWindow()
 {
@@ -140,6 +94,46 @@ MainWindow::~MainWindow()
        }
 
        delete timer;
+    }
+
+    if(timer_fisrt)
+    {
+       if(timer_fisrt->isActive())
+       {
+           timer_fisrt->stop();
+       }
+
+       delete timer_fisrt;
+    }
+
+    if(timer_second)
+    {
+       if(timer_second->isActive())
+       {
+           timer_second->stop();
+       }
+
+       delete timer_second;
+    }
+
+    if(timer_third)
+    {
+       if(timer_third->isActive())
+       {
+           timer_third->stop();
+       }
+
+       delete timer_third;
+    }
+
+    if(timer_fourth)
+    {
+       if(timer_fourth->isActive())
+       {
+           timer_fourth->stop();
+       }
+
+       delete timer_fourth;
     }
 
     //关闭udp
@@ -238,6 +232,7 @@ void MainWindow::slotUDPReadyRead()
         r.x = targetPoints[0].x;
         r.y = targetPoints[0].y;
 
+        //左右相机同一目标点x坐标相同
         Point3f worldPoint = uv2xyz(l,r);
         */
 
@@ -245,6 +240,139 @@ void MainWindow::slotUDPReadyRead()
 
 }
 
+void MainWindow::handleTimeout1()
+{
+    if(coarse_x == FIRST_CAPTURE_POSITION*10)//判断x轴当前位置
+    {
+        if(capture.isOpened())
+        {
+            capture >> frame;
+
+            Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
+            Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
+            Mat image_l = Mat(frame, rectLeft);
+            Mat image_r = Mat(frame, rectRight);
+
+            imwrite("fisrt_left.jpg",image_l);
+            imwrite("fisrt_right.jpg",image_r);
+
+            timer_fisrt->stop();//关闭定时器
+
+            timer_second->start(100);//启动第二个定时器
+        }
+        else {
+             capture.open(0);
+        }
+    }
+    else {
+        SendMotorRunCmd(0,1000,FIRST_CAPTURE_POSITION*10);
+    }
+
+
+}
+
+void MainWindow::handleTimeout2()
+{
+    if(coarse_x == SECOND_CAPTURE_POSITION*10)//判断x轴当前位置
+    {
+        if(capture.isOpened())
+        {
+            capture >> frame;
+
+            Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
+            Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
+            Mat image_l = Mat(frame, rectLeft);
+            Mat image_r = Mat(frame, rectRight);
+
+            imwrite("second_left.jpg",image_l);
+            imwrite("second_right.jpg",image_r);
+
+            timer_second->stop();//关闭定时器
+            timer_third->start(100);//启动第三个定时器
+        }
+        else {
+             capture.open(0);
+        }
+    }
+    else {
+        SendMotorRunCmd(0,1000,SECOND_CAPTURE_POSITION*10);
+    }
+}
+
+void MainWindow::handleTimeout3()
+{
+    if(coarse_x == THIRD_CAPTURE_POSITION*10)//判断x轴当前位置
+    {
+        if(capture.isOpened())
+        {
+            //1.采集图像
+            capture >> frame;
+
+            Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
+            Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
+            Mat image_l = Mat(frame, rectLeft);
+            Mat image_r = Mat(frame, rectRight);
+
+            imwrite("third_left.jpg",image_l);
+            imwrite("third_right.jpg",image_r);
+
+            timer_third->stop();//关闭定时器
+
+            timer_fourth->start(100);//启动第四个定时器
+        }
+        else {
+             capture.open(0);
+        }
+    }
+    else {
+        SendMotorRunCmd(0,1000,THIRD_CAPTURE_POSITION*10);
+    }
+}
+
+void MainWindow::handleTimeout4()
+{
+    if(coarse_x == FOURTH_CAPTURE_POSITION*10)//判断x轴当前位置
+    {
+        if(capture.isOpened())
+        {
+            //1.采集图像
+            capture >> frame;
+
+            Rect rectLeft(0, 0, frame.cols / 2, frame.rows);
+            Rect rectRight(frame.cols / 2, 0, frame.cols / 2, frame.rows);
+            Mat image_l = Mat(frame, rectLeft);
+            Mat image_r = Mat(frame, rectRight);
+
+            imwrite("fourth_left.jpg",image_l);
+            imwrite("fourth_right.jpg",image_r);
+
+            timer_fourth->stop();//关闭定时器
+
+            //2.拼图，只操作左相机图像
+            Mat first  = imread("first_left.jpg");
+            Mat second = imread("second_left.jpg");
+            Mat third  = imread("third_left.jpg");
+            Mat fourth = imread("fourth_left.jpg");
+
+            Rect roi(0, 0, second.cols, second.rows);
+            Rect roi2(0, 0, third.cols, third.rows);
+            Rect roi3(0, 0, fourth.cols, fourth.rows);
+            Mat dst = ImageStitchByHconcat(imageRatateNegative90(first),imageRatateNegative90(second),roi);
+            Mat dst2 = ImageStitchByHconcat(dst,imageRatateNegative90(third),roi2);
+            Mat dst3 = ImageStitchByHconcat(dst2,imageRatateNegative90(fourth),roi3);
+            imwrite("dst.jpg",dst3);
+            //3.发送拼图结果至上位机
+            SendPictureByUdp("dst.jpg",QString("127.0.0.1"),66520);
+
+        }
+        else {
+             capture.open(0);
+        }
+    }
+    else {
+        SendMotorRunCmd(0,1000,FOURTH_CAPTURE_POSITION*10);
+    }
+}
 
 void MainWindow::handleTimeout()
 {
@@ -268,8 +396,8 @@ void MainWindow::handleTimeout()
             image_r = imageRatateNegative90(image_r);
         }
 
-      //  imshow("left",jiaozheng(image_l,cameraMatrix_L,distCoeffs_L));
-     //   imshow("right",jiaozheng(image_r,cameraMatrix_R,distCoeffs_R));
+    //    imshow("left",jiaozheng(image_l,cameraMatrix_L,distCoeffs_L));
+    //    imshow("right",jiaozheng(image_r,cameraMatrix_R,distCoeffs_R));
 
         imshow("left",image_l);
         imshow("right",image_r);
@@ -281,9 +409,14 @@ void MainWindow::handleTimeout()
 
            m_bSaveImage = false;
 
-           cvtColor(distortion, distortion, CV_RGB2BGR);
+//           string path1 = "left" + std::to_string(cnt) + ".jpg";
+//           imwrite(path1, image_l);
+
+//           string path2 = "right" + std::to_string(cnt) + ".jpg";
+//           imwrite(path2, image_r);
+
            string path1 = std::to_string(cnt) + ".jpg";
-           imwrite(path1, distortion);
+           imwrite(path1, image_l);
 
            string path2 = std::to_string(cnt+25) + ".jpg";
            imwrite(path2, image_r);
@@ -343,8 +476,8 @@ void MainWindow::ShowImage(Mat srcImage)
 //   int a2 = ui->label->width();
 //   int b2 = ui->label->height();
 //   QImage imgg = img.scaled(a2, b2);
-    ui->label->setPixmap(QPixmap::fromImage(img));
-    ui->label->show();
+//    ui->label->setPixmap(QPixmap::fromImage(img));
+//    ui->label->show();
 }
 
 void MainWindow::Read_Data()//串口读取函数
@@ -394,13 +527,6 @@ void MainWindow::ReadParameters()
         fs["T"] >> T;
         fs["imageSize"] >> imageSize;
         fs.release();
-
-//        cout << cameraMatrix_L << endl;
-//        cout << distCoeffs_L << endl;
-//        cout << cameraMatrix_R << endl;
-//        cout << distCoeffs_R << endl;
-//        cout << R << endl;
-//        cout << T << endl;
     }
 }
 
@@ -507,6 +633,19 @@ Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,Rect  roi)
 }
 void MainWindow::on_pushButton_clicked()
 {
+    Point3f point(10,20,50);
+    cout<<"left camera coordinate is:"<<endl;
+    cout<<xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation)<<endl;
+    cout<<"right camera coordinate is:"<<endl;
+    cout<<xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation)<<endl;
+
+    Point2f l = xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation);
+    Point2f r = xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation);
+    Point3f worldPoint;
+    worldPoint = uv2xyz(l,r);
+    cout<<"wolrd coordinate is:"<<endl<<uv2xyz(l,r)<<endl;
+
+    return;
     try {
          Mat dst;
          Mat right = imread("d:\\2.jpg");
@@ -560,7 +699,7 @@ void MainWindow::SendPictureByUdp(QString path,QString ip,qint16 port)
         char *m_sendBuf = new char[1024];
 
         int size = file.size();
-        int num = 0;
+        unsigned int num = 0;
         unsigned int count = 0;
         int endSize = size%996;//996=1024-sizeof(ImageFrameHead)
         if (endSize == 0) {
@@ -999,4 +1138,10 @@ void MainWindow::on_resetButton_clicked()
     {
          SendMotorResetCmd(0x2);
     }
+}
+
+void MainWindow::on_pushButton_capture_clicked()
+{
+    SendMotorRunCmd(0,1000,FIRST_CAPTURE_POSITION*10);//发送第一个位置信息
+    timer_fisrt->start(100);
 }
