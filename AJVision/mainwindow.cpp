@@ -357,10 +357,10 @@ void MainWindow::handleTimeout4()
             Rect roi(0, 0, second.cols, second.rows);
             Rect roi2(0, 0, third.cols, third.rows);
             Rect roi3(0, 0, fourth.cols, fourth.rows);
-            Mat dst = ImageStitchByHconcat(imageRatateNegative90(first),imageRatateNegative90(second),roi);
-            Mat dst2 = ImageStitchByHconcat(dst,imageRatateNegative90(third),roi2);
-            Mat dst3 = ImageStitchByHconcat(dst2,imageRatateNegative90(fourth),roi3);
-            imwrite("dst.jpg",dst3);
+//            Mat dst = ImageStitchByHconcat(imageRatateNegative90(first),imageRatateNegative90(second),roi);
+//            Mat dst2 = ImageStitchByHconcat(dst,imageRatateNegative90(third),roi2);
+//            Mat dst3 = ImageStitchByHconcat(dst2,imageRatateNegative90(fourth),roi3);
+ //           imwrite("dst.jpg",dst3);
             //3.发送拼图结果至上位机
             SendPictureByUdp("dst.jpg",QString("127.0.0.1"),66520);
 
@@ -616,47 +616,77 @@ bool MainWindow::computeDisparityImage(Mat img1, Mat img2, Mat& img1_rectified,
   参数：
     left	左边图像
     right	右边图像
-    roi	右边图像拼接区域
+    nums	重合列数
   返回：
    mat 拼接之后的图像
 */
-Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,Rect  roi)
+Mat MainWindow::ImageStitchByHconcat(Mat left,Mat right,int nums)
 {
     Mat dst;
   //   Rect rectRight(cols, 0, right.cols - cols, right.rows);
-    right = Mat(right,roi);
+    Rect roi(0,0,left.cols-nums,left.rows);
+    left = Mat(left,roi);
 
     hconcat(left,right,dst);
     //         vconcat（B,C，A）; // 等同于A=[B  C] 横向拼接
     //         hconcat（B,C，A）; // 等同于A=[B  C] 纵向拼接
     return dst;
 }
+
+//两幅图片纵向拼接
+/*
+  参数：
+    left	左边图像
+    right	右边图像
+    nums	重合列数
+  返回：
+   mat 拼接之后的图像
+*/
+Mat MainWindow::ImageStitchByVconcat(Mat left,Mat right,int nums)
+{
+    Mat dst;
+
+    Rect roi(0,nums,right.cols,right.rows-nums);
+    right = Mat(right,roi);
+
+    vconcat(left,right,dst);
+    //         vconcat（B,C，A）; // 等同于A=[B  C] 横向拼接
+    //         hconcat（B,C，A）; // 等同于A=[B  C] 纵向拼接
+    return dst;
+}
+
 void MainWindow::on_pushButton_clicked()
 {
-    Point3f point(10,20,50);
-    cout<<"left camera coordinate is:"<<endl;
-    cout<<xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation)<<endl;
-    cout<<"right camera coordinate is:"<<endl;
-    cout<<xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation)<<endl;
+//    Point3f point(10,20,50);
+//    cout<<"left camera coordinate is:"<<endl;
+//    cout<<xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation)<<endl;
+//    cout<<"right camera coordinate is:"<<endl;
+//    cout<<xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation)<<endl;
 
-    Point2f l = xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation);
-    Point2f r = xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation);
-    Point3f worldPoint;
-    worldPoint = uv2xyz(l,r);
-    cout<<"wolrd coordinate is:"<<endl<<uv2xyz(l,r)<<endl;
+//    Point2f l = xyz2uv(point,leftIntrinsic,leftTranslation,leftRotation);
+//    Point2f r = xyz2uv(point,rightIntrinsic,rightTranslation,rightRotation);
+//    Point3f worldPoint;
+//    worldPoint = uv2xyz(l,r);
+//    cout<<"wolrd coordinate is:"<<endl<<uv2xyz(l,r)<<endl;
 
-    return;
+ //   return;
     try {
-         Mat dst;
-         Mat right = imread("d:\\2.jpg");
-         Mat left  = imread("d:\\1.jpg");
+            Mat dst;
 
-         Rect rectLeft(0, 0, left.cols / 2, left.rows);
-         Rect rectRight(right.cols / 2, 0, right.cols / 2, right.rows);
-         Mat image_l = Mat(left, rectLeft);
-         Mat image_r = Mat(right, rectRight);
+            Mat left  = imread("d:\\1.jpg");
+            Mat right = imread("d:\\2.jpg");
 
-         ShowImage(ImageStitchByHconcat(left,right,rectRight));
+            left = imageRatateNegative90(left);
+            right = imageRatateNegative90(right);
+
+            cout << left.rows << endl;
+            cout << left.cols << endl;
+
+         imshow("left",left);
+         imshow("right",right);
+         imshow("dst",ImageStitchByHconcat(left,right,350));
+
+//         ShowImage(ImageStitchByHconcat(left,right,rectRight));
 
 //         return;
 //         if(ui->comboBox_Algorihm->currentIndex()==0)
@@ -671,8 +701,6 @@ void MainWindow::on_pushButton_clicked()
 //         {
 //             dst = StitchImageBySift(right,left);
 //         }
-
-        //   imshow("dst",dst);
 
     } catch (QString exception) {
         QMessageBox::about(this,"Error",exception);

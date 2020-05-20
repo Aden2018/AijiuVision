@@ -76,7 +76,8 @@ public:
 
     Mat imageRotate90(Mat src);//选择90度
     Mat imageRatateNegative90(Mat src);//选择-90度
-    Mat ImageStitchByHconcat(Mat left,Mat right,Rect roi);
+    Mat ImageStitchByHconcat(Mat left,Mat right,int nums); //横向拼接
+    Mat ImageStitchByVconcat(Mat left,Mat right,int nums);//纵向拼接
     void ShowImage(Mat srcImage);//显示图像
 
     //将二维坐标转换成三维坐标
